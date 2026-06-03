@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Couple Expense icon">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <circle cx="168" cy="178" r="62" fill="#f6fbf9"/>
+  <circle cx="344" cy="178" r="62" fill="#f6fbf9"/>
+  <path d="M114 326c0-66 54-120 120-120h24c66 0 120 54 120 120v28H114z" fill="#f6fbf9" opacity=".95"/>
+  <path d="M256 360c-50-38-82-70-82-110 0-31 23-54 52-54 17 0 33 8 43 22 10-14 26-22 43-22 29 0 52 23 52 54 0 40-32 72-82 110l-13 10z" fill="#e11d48"/>
+  <path d="M152 392h208" stroke="#f6fbf9" stroke-width="28" stroke-linecap="round"/>
+</svg>
