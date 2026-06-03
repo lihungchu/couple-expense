@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>情侶共同記帳</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>❤️ 情侶共同記帳</h1>
+
+    <section class="card">
+      <button id="loginBtn">使用 Google 登入</button>
+      <button id="logoutBtn" class="hidden">登出</button>
+      <p id="userInfo"></p>
+    </section>
+
+    <section id="appArea" class="card hidden">
+      <h2>新增支出</h2>
+
+      <input id="amount" type="number" placeholder="金額" />
+
+      <select id="category">
+        <option value="餐飲">餐飲</option>
+        <option value="交通">交通</option>
+        <option value="娛樂">娛樂</option>
+        <option value="生活用品">生活用品</option>
+        <option value="其他">其他</option>
+      </select>
+
+      <select id="payer">
+        <option value="Lihung">Lihung</option>
+        <option value="女友">女友</option>
+      </select>
+
+      <input id="note" type="text" placeholder="備註" />
+
+      <button id="addBtn">新增</button>
+    </section>
+
+    <section id="listArea" class="card hidden">
+      <h2>支出紀錄</h2>
+      <div id="expenseList"></div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
