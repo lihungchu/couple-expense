@@ -7,7 +7,8 @@
   <meta name="description" content="情侶共同記帳系統" />
   <title>情侶共同記帳</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="assets/icons/app-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
+  <link rel="icon" href="assets/icons/icon-192.png" type="image/png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -81,12 +82,98 @@
           </label>
 
           <label class="full-width">
+            <span>付款錢包</span>
+            <select id="walletId" name="walletId" required>
+              <option value="">請先新增錢包</option>
+            </select>
+          </label>
+
+          <label class="full-width">
             <span>備註</span>
             <input id="note" name="note" type="text" maxlength="80" placeholder="晚餐、車票、生活用品..." />
           </label>
 
           <button id="addBtn" class="primary-button full-width" type="submit">新增支出</button>
         </form>
+      </section>
+
+      <section class="panel wallet-panel">
+        <div class="section-heading">
+          <h2>共同錢包</h2>
+          <button id="createDefaultWalletsBtn" class="secondary-button compact-button" type="button">建立預設錢包</button>
+        </div>
+
+        <div id="walletList" class="wallet-list"></div>
+
+        <form id="walletForm" class="expense-form wallet-form">
+          <label>
+            <span>錢包名稱</span>
+            <input id="walletName" type="text" maxlength="30" placeholder="例如：龍的現金" required />
+          </label>
+
+          <label>
+            <span>擁有者</span>
+            <select id="walletOwner" required>
+              <option value="龍">龍</option>
+              <option value="卡皮巴拉">卡皮巴拉</option>
+              <option value="共同">共同</option>
+            </select>
+          </label>
+
+          <label>
+            <span>初始餘額</span>
+            <input id="walletInitialBalance" type="number" inputmode="decimal" step="1" value="0" required />
+          </label>
+
+          <button class="primary-button" type="submit">新增錢包</button>
+        </form>
+
+        <form id="walletTransactionForm" class="expense-form wallet-form">
+          <label>
+            <span>交易類型</span>
+            <select id="walletTransactionType" required>
+              <option value="income">收入</option>
+              <option value="transfer">轉帳</option>
+              <option value="adjustment">調整餘額</option>
+            </select>
+          </label>
+
+          <label>
+            <span>來源錢包</span>
+            <select id="transactionWalletId" required>
+              <option value="">請先新增錢包</option>
+            </select>
+          </label>
+
+          <label id="toWalletField">
+            <span>目標錢包</span>
+            <select id="transactionToWalletId">
+              <option value="">請選擇目標錢包</option>
+            </select>
+          </label>
+
+          <label>
+            <span id="walletTransactionAmountLabel">金額</span>
+            <input id="walletTransactionAmount" type="number" inputmode="decimal" step="1" min="0" required />
+          </label>
+
+          <label>
+            <span>日期</span>
+            <input id="walletTransactionDate" type="date" required />
+          </label>
+
+          <label>
+            <span>備註</span>
+            <input id="walletTransactionNote" type="text" maxlength="80" placeholder="薪水、轉帳、校正..." />
+          </label>
+
+          <button class="primary-button full-width" type="submit">新增錢包交易</button>
+        </form>
+
+        <div>
+          <h3>錢包流水</h3>
+          <div id="walletTransactionList" class="wallet-transaction-list"></div>
+        </div>
       </section>
 
       <section class="panel stats-panel">
@@ -173,6 +260,13 @@
         <select id="editPayer" required>
           <option value="龍">龍</option>
           <option value="卡皮巴拉">卡皮巴拉</option>
+        </select>
+      </label>
+
+      <label class="full-width">
+        <span>付款錢包</span>
+        <select id="editWalletId" required>
+          <option value="">請先新增錢包</option>
         </select>
       </label>
 

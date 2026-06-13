@@ -6,11 +6,19 @@ import {
   signOut
 } from "./firebase.js";
 import {
-  createExpense,
-  removeExpense,
-  saveExpense,
   subscribeExpenses
 } from "./expenses.js";
+import {
+  archiveWallet,
+  createDefaultWallets,
+  createExpenseWithWallet,
+  createWallet,
+  createWalletTransaction,
+  removeExpenseWithWallet,
+  saveExpenseWithWallet,
+  subscribeWallets,
+  subscribeWalletTransactions
+} from "./wallets.js";
 import { calculateStats, filterExpensesByMonth } from "./stats.js";
 import {
   applyTheme,
@@ -19,23 +27,37 @@ import {
   dom,
   getNextTheme,
   getExpenseFromForm,
+  getWalletFromForm,
+  getWalletTransactionFromForm,
   openEditDialog,
   renderExpenses,
   renderStats,
+  renderWalletOptions,
+  renderWallets,
+  renderWalletTransactions,
   resetAddForm,
+  resetWalletForm,
+  resetWalletTransactionForm,
   setSignedInView,
   setSignedOutView,
-  todayString
+  todayString,
+  updateWalletTransactionMode
 } from "./ui.js";
 
 let allExpenses = [];
+let allWallets = [];
+let allWalletTransactions = [];
 let unsubscribeExpenses = null;
+let unsubscribeWallets = null;
+let unsubscribeWalletTransactions = null;
 
 const savedMode = localStorage.getItem("mode");
 localStorage.removeItem("theme");
 
 dom.date.value = todayString();
 dom.monthFilter.value = currentMonthString();
+dom.walletTransactionDate.value = todayString();
+updateWalletTransactionMode();
 applyTheme(savedMode || "capybara");
 
 dom.loginBtn.addEventListener("click", async () => {
@@ -61,12 +83,18 @@ dom.themeToggle.addEventListener("click", () => {
 dom.expenseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  if (!allWallets.some((wallet) => !wallet.archived)) {
+    alert("請先新增錢包，再新增支出");
+    return;
+  }
+
   try {
-    await createExpense(getExpenseFromForm({
+    await createExpenseWithWallet(getExpenseFromForm({
       date: dom.date,
       amount: dom.amount,
       category: dom.category,
       payer: dom.payer,
+      walletId: dom.walletId,
       note: dom.note
     }));
     resetAddForm();
@@ -76,6 +104,52 @@ dom.expenseForm.addEventListener("submit", async (event) => {
 });
 
 dom.monthFilter.addEventListener("change", refreshView);
+
+dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
+
+dom.createDefaultWalletsBtn.addEventListener("click", async () => {
+  try {
+    await createDefaultWallets();
+  } catch (error) {
+    alert(`建立預設錢包失敗：${error.message}`);
+  }
+});
+
+dom.walletForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await createWallet(getWalletFromForm());
+    resetWalletForm();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+dom.walletTransactionForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await createWalletTransaction(getWalletTransactionFromForm());
+    resetWalletTransactionForm();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+dom.walletList.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action='archive-wallet']");
+
+  if (!button) {
+    return;
+  }
+
+  const confirmed = confirm("確定要封存這個錢包嗎？封存後不會出現在新交易選單，但歷史紀錄會保留。");
+
+  if (confirmed) {
+    await archiveWallet(button.dataset.id);
+  }
+});
 
 dom.expenseList.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-action]");
@@ -99,7 +173,7 @@ dom.expenseList.addEventListener("click", async (event) => {
     const confirmed = confirm(`確定要刪除「${expense.note || expense.category || "這筆支出"}」嗎？`);
 
     if (confirmed) {
-      await removeExpense(expense.id);
+      await removeExpenseWithWallet(expense.id);
     }
   }
 });
@@ -108,11 +182,12 @@ dom.editForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
-    await saveExpense(dom.editId.value, getExpenseFromForm({
+    await saveExpenseWithWallet(dom.editId.value, getExpenseFromForm({
       date: dom.editDate,
       amount: dom.editAmount,
       category: dom.editCategory,
       payer: dom.editPayer,
+      walletId: dom.editWalletId,
       note: dom.editNote
     }));
     closeEditDialog();
@@ -130,8 +205,20 @@ onAuthStateChanged(auth, (user) => {
     unsubscribeExpenses = null;
   }
 
+  if (unsubscribeWallets) {
+    unsubscribeWallets();
+    unsubscribeWallets = null;
+  }
+
+  if (unsubscribeWalletTransactions) {
+    unsubscribeWalletTransactions();
+    unsubscribeWalletTransactions = null;
+  }
+
   if (!user) {
     allExpenses = [];
+    allWallets = [];
+    allWalletTransactions = [];
     setSignedOutView();
     return;
   }
@@ -147,6 +234,27 @@ onAuthStateChanged(auth, (user) => {
       alert(`讀取資料失敗：${error.message}`);
     }
   );
+
+  unsubscribeWallets = subscribeWallets(
+    (wallets) => {
+      allWallets = wallets;
+      refreshWalletView();
+      refreshView();
+    },
+    (error) => {
+      alert(`讀取錢包失敗：${error.message}`);
+    }
+  );
+
+  unsubscribeWalletTransactions = subscribeWalletTransactions(
+    (transactions) => {
+      allWalletTransactions = transactions;
+      refreshWalletView();
+    },
+    (error) => {
+      alert(`讀取錢包流水失敗：${error.message}`);
+    }
+  );
 });
 
 if ("serviceWorker" in navigator) {
@@ -160,5 +268,11 @@ function refreshView() {
   const stats = calculateStats(filteredExpenses);
 
   renderStats(stats);
-  renderExpenses(filteredExpenses);
+  renderExpenses(filteredExpenses, allWallets);
+}
+
+function refreshWalletView() {
+  renderWallets(allWallets);
+  renderWalletOptions(allWallets);
+  renderWalletTransactions(allWalletTransactions, allWallets);
 }
