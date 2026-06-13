@@ -65,6 +65,12 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
+}
+
 .hidden {
   display: none !important;
 }
@@ -217,6 +223,27 @@ h3 {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.status-message {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.status-message.success {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: var(--primary-strong);
+}
+
+.status-message.error {
+  border-color: rgba(225, 29, 72, 0.35);
+  background: var(--danger-bg);
+  color: var(--accent);
 }
 
 .auth-actions {

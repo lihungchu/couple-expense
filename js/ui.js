@@ -45,7 +45,9 @@ export const dom = {
   walletOwner: document.getElementById("walletOwner"),
   walletInitialBalance: document.getElementById("walletInitialBalance"),
   walletList: document.getElementById("walletList"),
+  walletStatus: document.getElementById("walletStatus"),
   createDefaultWalletsBtn: document.getElementById("createDefaultWalletsBtn"),
+  walletSubmitBtn: document.getElementById("walletSubmitBtn"),
   walletTransactionForm: document.getElementById("walletTransactionForm"),
   walletTransactionType: document.getElementById("walletTransactionType"),
   transactionWalletId: document.getElementById("transactionWalletId"),
@@ -196,6 +198,7 @@ export function setSignedOutView() {
   renderWallets([]);
   renderWalletOptions([]);
   renderWalletTransactions([], []);
+  setWalletStatus("");
 }
 
 export function resetAddForm() {
@@ -206,6 +209,18 @@ export function resetAddForm() {
 export function resetWalletForm() {
   dom.walletForm.reset();
   dom.walletInitialBalance.value = 0;
+}
+
+export function setWalletBusy(isBusy, label = "新增錢包") {
+  dom.walletSubmitBtn.disabled = isBusy;
+  dom.createDefaultWalletsBtn.disabled = isBusy;
+  dom.walletSubmitBtn.textContent = isBusy ? "新增中..." : label;
+}
+
+export function setWalletStatus(message, type = "") {
+  dom.walletStatus.textContent = message;
+  dom.walletStatus.className = `status-message ${type}`.trim();
+  dom.walletStatus.classList.toggle("hidden", !message);
 }
 
 export function resetWalletTransactionForm() {

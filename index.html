@@ -103,6 +103,7 @@
           <button id="createDefaultWalletsBtn" class="secondary-button compact-button" type="button">建立預設錢包</button>
         </div>
 
+        <p id="walletStatus" class="status-message hidden" role="status"></p>
         <div id="walletList" class="wallet-list"></div>
 
         <form id="walletForm" class="expense-form wallet-form">
@@ -125,7 +126,7 @@
             <input id="walletInitialBalance" type="number" inputmode="decimal" step="1" value="0" required />
           </label>
 
-          <button class="primary-button" type="submit">新增錢包</button>
+          <button id="walletSubmitBtn" class="primary-button" type="submit">新增錢包</button>
         </form>
 
         <form id="walletTransactionForm" class="expense-form wallet-form">

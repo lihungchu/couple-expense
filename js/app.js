@@ -38,6 +38,8 @@ import {
   resetAddForm,
   resetWalletForm,
   resetWalletTransactionForm,
+  setWalletBusy,
+  setWalletStatus,
   setSignedInView,
   setSignedOutView,
   todayString,
@@ -108,21 +110,32 @@ dom.monthFilter.addEventListener("change", refreshView);
 dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
 
 dom.createDefaultWalletsBtn.addEventListener("click", async () => {
+  setWalletBusy(true);
+  setWalletStatus("正在建立預設錢包...");
+
   try {
     await createDefaultWallets();
+    setWalletStatus("預設錢包已建立，正在同步列表...", "success");
   } catch (error) {
-    alert(`建立預設錢包失敗：${error.message}`);
+    setWalletStatus(getWalletErrorMessage(error), "error");
+  } finally {
+    setWalletBusy(false);
   }
 });
 
 dom.walletForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  setWalletBusy(true);
+  setWalletStatus("正在新增錢包...");
 
   try {
     await createWallet(getWalletFromForm());
     resetWalletForm();
+    setWalletStatus("錢包已新增，正在同步列表...", "success");
   } catch (error) {
-    alert(error.message);
+    setWalletStatus(getWalletErrorMessage(error), "error");
+  } finally {
+    setWalletBusy(false);
   }
 });
 
@@ -238,11 +251,14 @@ onAuthStateChanged(auth, (user) => {
   unsubscribeWallets = subscribeWallets(
     (wallets) => {
       allWallets = wallets;
+      if (wallets.length > 0) {
+        setWalletStatus("");
+      }
       refreshWalletView();
       refreshView();
     },
     (error) => {
-      alert(`讀取錢包失敗：${error.message}`);
+      setWalletStatus(getWalletErrorMessage(error), "error");
     }
   );
 
@@ -252,7 +268,7 @@ onAuthStateChanged(auth, (user) => {
       refreshWalletView();
     },
     (error) => {
-      alert(`讀取錢包流水失敗：${error.message}`);
+      setWalletStatus(getWalletErrorMessage(error), "error");
     }
   );
 });
@@ -275,4 +291,14 @@ function refreshWalletView() {
   renderWallets(allWallets);
   renderWalletOptions(allWallets);
   renderWalletTransactions(allWalletTransactions, allWallets);
+}
+
+function getWalletErrorMessage(error) {
+  const message = error?.message || String(error);
+
+  if (error?.code === "permission-denied" || message.includes("Missing or insufficient permissions")) {
+    return "錢包讀寫被 Firestore 規則擋住了。請到 Firebase Console > Firestore Database > Rules，貼上 firestore.rules 內容並發布；GitHub Pages 不會自動發布規則。";
+  }
+
+  return `錢包操作失敗：${message}`;
 }
