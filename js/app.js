@@ -19,27 +19,50 @@ import {
   subscribeWallets,
   subscribeWalletTransactions
 } from "./wallets.js";
-import { calculateStats, filterExpensesByMonth } from "./stats.js";
+import {
+  calculateBudgetSummaries,
+  calculateWalletStats,
+  filterExpensesByMonth
+} from "./stats.js";
+import {
+  archiveBudget,
+  createBudget,
+  createBudgetDeduction,
+  removeBudgetDeduction,
+  saveBudget,
+  subscribeBudgetDeductions,
+  subscribeBudgets
+} from "./budgets.js";
 import {
   applyTheme,
   closeEditDialog,
   currentMonthString,
   dom,
   getNextTheme,
+  getBudgetFromForm,
+  getBudgetDeductionFromForm,
   getExpenseFromForm,
   getWalletFromForm,
   getWalletTransactionFromForm,
+  openBudgetEdit,
   openEditDialog,
   renderExpenses,
+  renderBudgetDeductions,
+  renderBudgetOptions,
+  renderBudgetWalletOptions,
+  renderBudgets,
   renderStats,
   renderWalletOptions,
   renderWallets,
   renderWalletTransactions,
   resetAddForm,
+  resetBudgetDeductionForm,
+  resetBudgetForm,
   resetWalletForm,
   resetWalletTransactionForm,
   setWalletBusy,
   setWalletStatus,
+  setBudgetStatus,
   setSignedInView,
   setSignedOutView,
   todayString,
@@ -49,9 +72,13 @@ import {
 let allExpenses = [];
 let allWallets = [];
 let allWalletTransactions = [];
+let allBudgets = [];
+let allBudgetDeductions = [];
 let unsubscribeExpenses = null;
 let unsubscribeWallets = null;
 let unsubscribeWalletTransactions = null;
+let unsubscribeBudgets = null;
+let unsubscribeBudgetDeductions = null;
 
 const savedMode = localStorage.getItem("mode");
 localStorage.removeItem("theme");
@@ -59,6 +86,9 @@ localStorage.removeItem("theme");
 dom.date.value = todayString();
 dom.monthFilter.value = currentMonthString();
 dom.walletTransactionDate.value = todayString();
+dom.budgetStartDate.value = todayString();
+dom.budgetEndDate.value = todayString();
+dom.deductionDate.value = todayString();
 updateWalletTransactionMode();
 applyTheme(savedMode || "capybara");
 
@@ -150,6 +180,95 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
   }
 });
 
+dom.budgetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    const budget = getBudgetFromForm();
+
+    if (dom.budgetId.value) {
+      await saveBudget(dom.budgetId.value, budget);
+      setBudgetStatus("預算已更新", "success");
+    } else {
+      await createBudget(budget);
+      setBudgetStatus("預算已新增", "success");
+    }
+
+    resetBudgetForm();
+  } catch (error) {
+    setBudgetStatus(getBudgetErrorMessage(error), "error");
+  }
+});
+
+dom.cancelBudgetEditBtn.addEventListener("click", resetBudgetForm);
+
+dom.budgetList.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const budget = allBudgets.find((item) => item.id === button.dataset.id);
+
+  if (!budget) {
+    return;
+  }
+
+  if (button.dataset.action === "edit-budget") {
+    renderBudgetWalletOptions(allWallets);
+    openBudgetEdit(budget);
+    return;
+  }
+
+  if (button.dataset.action === "archive-budget") {
+    const confirmed = confirm("確定要封存這個預算嗎？");
+
+    if (confirmed) {
+      await archiveBudget(budget.id);
+    }
+  }
+});
+
+dom.budgetDeductionForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    const deduction = getBudgetDeductionFromForm();
+    const budget = allBudgets.find((item) => item.id === deduction.budgetId);
+
+    if (!budget || !(budget.walletIds || []).includes(deduction.walletId)) {
+      throw new Error("扣款錢包必須包含在預算錢包範圍內");
+    }
+
+    await createBudgetDeduction(deduction);
+    resetBudgetDeductionForm();
+    setBudgetStatus("手動扣款已新增", "success");
+  } catch (error) {
+    setBudgetStatus(getBudgetErrorMessage(error), "error");
+  }
+});
+
+dom.budgetDeductionList.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action='delete-deduction']");
+
+  if (!button) {
+    return;
+  }
+
+  const deduction = allBudgetDeductions.find((item) => item.id === button.dataset.id);
+
+  if (!deduction) {
+    return;
+  }
+
+  const confirmed = confirm("確定要刪除這筆手動扣款嗎？");
+
+  if (confirmed) {
+    await removeBudgetDeduction(deduction);
+  }
+});
+
 dom.walletList.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-action='archive-wallet']");
 
@@ -228,10 +347,22 @@ onAuthStateChanged(auth, (user) => {
     unsubscribeWalletTransactions = null;
   }
 
+  if (unsubscribeBudgets) {
+    unsubscribeBudgets();
+    unsubscribeBudgets = null;
+  }
+
+  if (unsubscribeBudgetDeductions) {
+    unsubscribeBudgetDeductions();
+    unsubscribeBudgetDeductions = null;
+  }
+
   if (!user) {
     allExpenses = [];
     allWallets = [];
     allWalletTransactions = [];
+    allBudgets = [];
+    allBudgetDeductions = [];
     setSignedOutView();
     return;
   }
@@ -271,6 +402,26 @@ onAuthStateChanged(auth, (user) => {
       setWalletStatus(getWalletErrorMessage(error), "error");
     }
   );
+
+  unsubscribeBudgets = subscribeBudgets(
+    (budgets) => {
+      allBudgets = budgets;
+      refreshBudgetView();
+    },
+    (error) => {
+      setBudgetStatus(getBudgetErrorMessage(error), "error");
+    }
+  );
+
+  unsubscribeBudgetDeductions = subscribeBudgetDeductions(
+    (deductions) => {
+      allBudgetDeductions = deductions;
+      refreshBudgetView();
+    },
+    (error) => {
+      setBudgetStatus(getBudgetErrorMessage(error), "error");
+    }
+  );
 });
 
 if ("serviceWorker" in navigator) {
@@ -281,16 +432,19 @@ if ("serviceWorker" in navigator) {
 
 function refreshView() {
   const filteredExpenses = filterExpensesByMonth(allExpenses, dom.monthFilter.value);
-  const stats = calculateStats(filteredExpenses);
+  const stats = calculateWalletStats(filteredExpenses, allWallets);
 
   renderStats(stats);
   renderExpenses(filteredExpenses, allWallets);
+  refreshBudgetView();
 }
 
 function refreshWalletView() {
   renderWallets(allWallets);
   renderWalletOptions(allWallets);
+  renderBudgetWalletOptions(allWallets);
   renderWalletTransactions(allWalletTransactions, allWallets);
+  refreshBudgetView();
 }
 
 function getWalletErrorMessage(error) {
@@ -301,4 +455,28 @@ function getWalletErrorMessage(error) {
   }
 
   return `錢包操作失敗：${message}`;
+}
+
+function refreshBudgetView() {
+  const summaries = calculateBudgetSummaries(
+    allBudgets,
+    allExpenses,
+    allBudgetDeductions,
+    allWallets,
+    todayString()
+  );
+
+  renderBudgets(summaries);
+  renderBudgetOptions(allBudgets, allWallets);
+  renderBudgetDeductions(allBudgetDeductions, allBudgets, allWallets);
+}
+
+function getBudgetErrorMessage(error) {
+  const message = error?.message || String(error);
+
+  if (error?.code === "permission-denied" || message.includes("Missing or insufficient permissions")) {
+    return "預算讀寫被 Firestore 規則擋住了。請到 Firebase Console > Firestore Database > Rules，加入 budgets 與 budgetDeductions 規則並發布。";
+  }
+
+  return `預算操作失敗：${message}`;
 }

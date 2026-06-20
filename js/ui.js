@@ -60,8 +60,28 @@ export const dom = {
   walletTransactionList: document.getElementById("walletTransactionList"),
   monthFilter: document.getElementById("monthFilter"),
   monthlyTotal: document.getElementById("monthlyTotal"),
-  dragonTotal: document.getElementById("dragonTotal"),
-  capybaraTotal: document.getElementById("capybaraTotal"),
+  topWalletTotal: document.getElementById("topWalletTotal"),
+  walletCountTotal: document.getElementById("walletCountTotal"),
+  budgetStatus: document.getElementById("budgetStatus"),
+  budgetList: document.getElementById("budgetList"),
+  budgetForm: document.getElementById("budgetForm"),
+  budgetId: document.getElementById("budgetId"),
+  budgetName: document.getElementById("budgetName"),
+  budgetAmount: document.getElementById("budgetAmount"),
+  budgetStartDate: document.getElementById("budgetStartDate"),
+  budgetEndDate: document.getElementById("budgetEndDate"),
+  budgetWalletIds: document.getElementById("budgetWalletIds"),
+  budgetSubmitBtn: document.getElementById("budgetSubmitBtn"),
+  cancelBudgetEditBtn: document.getElementById("cancelBudgetEditBtn"),
+  budgetDeductionForm: document.getElementById("budgetDeductionForm"),
+  deductionBudgetId: document.getElementById("deductionBudgetId"),
+  deductionWalletId: document.getElementById("deductionWalletId"),
+  deductionAmount: document.getElementById("deductionAmount"),
+  deductionDate: document.getElementById("deductionDate"),
+  deductionNote: document.getElementById("deductionNote"),
+  deductionAffectsWallet: document.getElementById("deductionAffectsWallet"),
+  deductionSubmitBtn: document.getElementById("deductionSubmitBtn"),
+  budgetDeductionList: document.getElementById("budgetDeductionList"),
   themeBadge: document.getElementById("themeBadge"),
   themeTitle: document.getElementById("themeTitle"),
   themeDescription: document.getElementById("themeDescription"),
@@ -177,6 +197,64 @@ export function getWalletTransactionFromForm() {
   };
 }
 
+export function getBudgetFromForm() {
+  const amount = Number(dom.budgetAmount.value);
+  const walletIds = [...dom.budgetWalletIds.selectedOptions].map((option) => option.value);
+
+  if (!dom.budgetName.value.trim()) {
+    throw new Error("請輸入預算名稱");
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("請輸入正確預算金額");
+  }
+
+  if (!dom.budgetStartDate.value || !dom.budgetEndDate.value) {
+    throw new Error("請選擇預算日期區間");
+  }
+
+  if (dom.budgetStartDate.value > dom.budgetEndDate.value) {
+    throw new Error("結束日期不能早於開始日期");
+  }
+
+  if (!walletIds.length) {
+    throw new Error("請至少選擇一個錢包");
+  }
+
+  return {
+    name: dom.budgetName.value.trim(),
+    amount,
+    startDate: dom.budgetStartDate.value,
+    endDate: dom.budgetEndDate.value,
+    walletIds
+  };
+}
+
+export function getBudgetDeductionFromForm() {
+  const amount = Number(dom.deductionAmount.value);
+
+  if (!dom.deductionBudgetId.value) {
+    throw new Error("請選擇預算");
+  }
+
+  if (!dom.deductionWalletId.value) {
+    throw new Error("請選擇錢包");
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("請輸入正確扣款金額");
+  }
+
+  return {
+    budgetId: dom.deductionBudgetId.value,
+    walletId: dom.deductionWalletId.value,
+    amount,
+    date: dom.deductionDate.value || todayString(),
+    note: dom.deductionNote.value.trim(),
+    affectsWallet: dom.deductionAffectsWallet.checked
+  };
+}
+
 export function setSignedInView(user) {
   dom.loginBtn.classList.add("hidden");
   dom.logoutBtn.classList.remove("hidden");
@@ -192,13 +270,18 @@ export function setSignedOutView() {
   renderExpenses([]);
   renderStats({
     total: 0,
-    payerTotals: { "龍": 0, "卡皮巴拉": 0 },
-    categories: []
+    categories: [],
+    topWallet: null,
+    walletCount: 0
   });
   renderWallets([]);
   renderWalletOptions([]);
   renderWalletTransactions([], []);
   setWalletStatus("");
+  renderBudgets([]);
+  renderBudgetOptions([], []);
+  renderBudgetDeductions([], [], []);
+  setBudgetStatus("");
 }
 
 export function resetAddForm() {
@@ -229,6 +312,26 @@ export function resetWalletTransactionForm() {
   updateWalletTransactionMode();
 }
 
+export function resetBudgetForm() {
+  dom.budgetForm.reset();
+  dom.budgetId.value = "";
+  dom.budgetStartDate.value = todayString();
+  dom.budgetEndDate.value = todayString();
+  dom.budgetSubmitBtn.textContent = "新增預算";
+  dom.cancelBudgetEditBtn.classList.add("hidden");
+}
+
+export function resetBudgetDeductionForm() {
+  dom.budgetDeductionForm.reset();
+  dom.deductionDate.value = todayString();
+}
+
+export function setBudgetStatus(message, type = "") {
+  dom.budgetStatus.textContent = message;
+  dom.budgetStatus.className = `status-message ${type}`.trim();
+  dom.budgetStatus.classList.toggle("hidden", !message);
+}
+
 export function updateWalletTransactionMode() {
   const type = dom.walletTransactionType.value;
   const isTransfer = type === "transfer";
@@ -241,12 +344,157 @@ export function updateWalletTransactionMode() {
 
 export function renderStats(stats) {
   dom.monthlyTotal.textContent = formatCurrency(stats.total);
-  dom.dragonTotal.textContent = formatCurrency(stats.payerTotals["龍"]);
-  dom.capybaraTotal.textContent = formatCurrency(stats.payerTotals["卡皮巴拉"]);
+  dom.topWalletTotal.textContent = stats.topWallet
+    ? `${stats.topWallet.name} ${formatCurrency(stats.topWallet.amount)}`
+    : "無";
+  dom.walletCountTotal.textContent = `${stats.walletCount}`;
   dom.chartEmpty.classList.toggle("hidden", stats.categories.length > 0);
 
   drawPieChart(dom.categoryChart, stats.categories);
   renderCategoryStats(stats.categories);
+}
+
+export function renderBudgetOptions(budgets, wallets) {
+  const activeBudgets = budgets.filter((budget) => !budget.archived);
+  const activeWallets = wallets.filter((wallet) => !wallet.archived);
+
+  replaceOptions(dom.deductionBudgetId, activeBudgets, "請選擇預算", (budget) => budget.name);
+  replaceOptions(dom.deductionWalletId, activeWallets, "請選擇錢包", (wallet) => wallet.name);
+}
+
+export function renderBudgetWalletOptions(wallets) {
+  const selected = new Set([...dom.budgetWalletIds.selectedOptions].map((option) => option.value));
+  dom.budgetWalletIds.replaceChildren();
+
+  wallets.filter((wallet) => !wallet.archived).forEach((wallet) => {
+    const option = document.createElement("option");
+    option.value = wallet.id;
+    option.textContent = wallet.name;
+    option.selected = selected.has(wallet.id);
+    dom.budgetWalletIds.append(option);
+  });
+}
+
+export function renderBudgets(budgetSummaries) {
+  dom.budgetList.replaceChildren();
+
+  if (!budgetSummaries.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "尚無預算，新增一個日期區間開始規劃";
+    dom.budgetList.append(empty);
+    return;
+  }
+
+  budgetSummaries.forEach((budget) => {
+    const item = document.createElement("article");
+    item.className = `budget-card ${budget.overAmount > 0 ? "over-budget" : ""}`;
+
+    const heading = document.createElement("div");
+    heading.className = "budget-heading";
+
+    const title = document.createElement("strong");
+    title.textContent = budget.name;
+
+    const range = document.createElement("span");
+    range.className = "muted";
+    range.textContent = `${budget.startDate} 到 ${budget.endDate}`;
+
+    const wallets = document.createElement("p");
+    wallets.className = "budget-wallets";
+    wallets.textContent = budget.walletNames.join("、") || "未選錢包";
+
+    const metrics = document.createElement("div");
+    metrics.className = "budget-metrics";
+    metrics.append(
+      createMetric("預算", formatCurrency(budget.amount)),
+      createMetric("已花費", formatCurrency(budget.spent)),
+      createMetric("剩餘", formatCurrency(Math.max(budget.remaining, 0))),
+      createMetric("每日可花", formatCurrency(budget.dailyAvailable))
+    );
+
+    const over = document.createElement("p");
+    over.className = "budget-over";
+    over.textContent = budget.overAmount > 0 ? `已超支 ${formatCurrency(budget.overAmount)}` : `${budget.daysLeft} 天可用`;
+
+    const actions = document.createElement("div");
+    actions.className = "budget-actions";
+
+    const edit = document.createElement("button");
+    edit.className = "secondary-button compact-button";
+    edit.type = "button";
+    edit.dataset.action = "edit-budget";
+    edit.dataset.id = budget.id;
+    edit.textContent = "編輯";
+
+    const archive = document.createElement("button");
+    archive.className = "danger-button compact-button";
+    archive.type = "button";
+    archive.dataset.action = "archive-budget";
+    archive.dataset.id = budget.id;
+    archive.textContent = "封存";
+
+    actions.append(edit, archive);
+    heading.append(title, range);
+    item.append(heading, wallets, metrics, over, actions);
+    dom.budgetList.append(item);
+  });
+}
+
+export function renderBudgetDeductions(deductions, budgets, wallets) {
+  dom.budgetDeductionList.replaceChildren();
+
+  if (!deductions.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "尚無手動扣款";
+    dom.budgetDeductionList.append(empty);
+    return;
+  }
+
+  deductions.slice(0, 8).forEach((deduction) => {
+    const item = document.createElement("article");
+    item.className = "wallet-transaction-item";
+
+    const budget = budgets.find((itemBudget) => itemBudget.id === deduction.budgetId);
+    const wallet = wallets.find((itemWallet) => itemWallet.id === deduction.walletId);
+
+    const title = document.createElement("strong");
+    title.textContent = `${budget?.name || "已封存預算"} · ${wallet?.name || "已封存錢包"}`;
+
+    const meta = document.createElement("span");
+    meta.className = "muted";
+    meta.textContent = `${deduction.date || "未填日期"} · ${deduction.affectsWallet ? "同步扣錢包" : "只扣預算"} · ${deduction.note || "無備註"}`;
+
+    const amount = document.createElement("span");
+    amount.className = "wallet-outflow";
+    amount.textContent = `-${formatCurrency(deduction.amount)}`;
+
+    const remove = document.createElement("button");
+    remove.className = "danger-button compact-button";
+    remove.type = "button";
+    remove.dataset.action = "delete-deduction";
+    remove.dataset.id = deduction.id;
+    remove.textContent = "刪除";
+
+    item.append(title, meta, amount, remove);
+    dom.budgetDeductionList.append(item);
+  });
+}
+
+export function openBudgetEdit(budget) {
+  dom.budgetId.value = budget.id;
+  dom.budgetName.value = budget.name || "";
+  dom.budgetAmount.value = Number(budget.amount || 0);
+  dom.budgetStartDate.value = budget.startDate || todayString();
+  dom.budgetEndDate.value = budget.endDate || todayString();
+
+  [...dom.budgetWalletIds.options].forEach((option) => {
+    option.selected = (budget.walletIds || []).includes(option.value);
+  });
+
+  dom.budgetSubmitBtn.textContent = "儲存預算";
+  dom.cancelBudgetEditBtn.classList.remove("hidden");
 }
 
 export function renderWallets(wallets) {
@@ -318,6 +566,39 @@ export function renderWalletOptions(wallets) {
   });
 }
 
+function replaceOptions(select, items, placeholderText, labelFactory) {
+  const currentValue = select.value;
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = items.length ? placeholderText : "請先新增資料";
+  select.append(placeholder);
+
+  items.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = labelFactory(item);
+    select.append(option);
+  });
+
+  if (items.some((item) => item.id === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+function createMetric(label, value) {
+  const item = document.createElement("div");
+  const labelNode = document.createElement("span");
+  const valueNode = document.createElement("strong");
+
+  labelNode.textContent = label;
+  valueNode.textContent = value;
+  item.append(labelNode, valueNode);
+
+  return item;
+}
+
 export function renderWalletTransactions(transactions, wallets) {
   dom.walletTransactionList.replaceChildren();
 
@@ -341,7 +622,10 @@ export function renderWalletTransactions(transactions, wallets) {
     meta.textContent = `${entry.date || "未填日期"} · ${entry.note || "無備註"}`;
 
     const amount = document.createElement("span");
-    const isOutflow = entry.type === "expense" || entry.type === "transfer" || entry.amount < 0;
+    const isOutflow = entry.type === "expense"
+      || entry.type === "transfer"
+      || entry.type === "budgetDeduction"
+      || entry.amount < 0;
     amount.className = isOutflow ? "wallet-outflow" : "wallet-inflow";
     amount.textContent = `${isOutflow ? "-" : ""}${formatCurrency(Math.abs(entry.amount || 0))}`;
 
@@ -368,6 +652,10 @@ function getTransactionTitle(entry, wallets) {
 
   if (entry.type === "expense") {
     return `${walletName} 支出`;
+  }
+
+  if (entry.type === "budgetDeduction") {
+    return `${walletName} 預算扣款`;
   }
 
   return walletName;

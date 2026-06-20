@@ -1,19 +1,19 @@
 export const chartColors = [
-  "#0f766e",
-  "#e11d48",
-  "#2563eb",
-  "#ca8a04",
-  "#7c3aed",
-  "#16a34a",
-  "#db2777",
-  "#475569"
+  "#00e5ff",
+  "#2563ff",
+  "#8b5cf6",
+  "#22f59d",
+  "#ff2bd6",
+  "#f8d748",
+  "#00a3ff",
+  "#64748b"
 ];
 
 export function drawPieChart(canvas, categories) {
   const context = canvas.getContext("2d");
   const ratio = window.devicePixelRatio || 1;
   const size = 280;
-  const radius = 104;
+  const radius = 112;
   const center = size / 2;
 
   canvas.width = size * ratio;
@@ -27,7 +27,7 @@ export function drawPieChart(canvas, categories) {
     context.beginPath();
     context.arc(center, center, radius, 0, Math.PI * 2);
     context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--line").trim() || "#eadfd3";
-    context.lineWidth = 22;
+    context.lineWidth = 2;
     context.stroke();
     return;
   }
@@ -47,9 +47,4 @@ export function drawPieChart(canvas, categories) {
 
     startAngle = endAngle;
   });
-
-  context.beginPath();
-  context.arc(center, center, 56, 0, Math.PI * 2);
-  context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#ffffff";
-  context.fill();
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "couple-expense-v6";
+const CACHE_NAME = "couple-expense-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./js/stats.js",
   "./js/chart.js",
   "./js/wallets.js",
+  "./js/budgets.js",
   "./manifest.webmanifest",
   "./assets/icons/app-icon.svg",
   "./assets/icons/icon-180.png",

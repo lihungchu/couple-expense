@@ -21,5 +21,13 @@ service cloud.firestore {
     match /walletTransactions/{transactionId} {
       allow read, write: if isAllowedUser();
     }
+
+    match /budgets/{budgetId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    match /budgetDeductions/{deductionId} {
+      allow read, write: if isAllowedUser();
+    }
   }
 }

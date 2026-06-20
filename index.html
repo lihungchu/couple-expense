@@ -175,11 +175,98 @@
           <h3>錢包流水</h3>
           <div id="walletTransactionList" class="wallet-transaction-list"></div>
         </div>
+
+        <section class="budget-section">
+          <div class="section-heading">
+            <h2>預算規劃</h2>
+            <span class="badge">依錢包計算</span>
+          </div>
+
+          <p id="budgetStatus" class="status-message hidden" role="status"></p>
+          <div id="budgetList" class="budget-list"></div>
+
+          <form id="budgetForm" class="expense-form wallet-form">
+            <input id="budgetId" type="hidden" />
+
+            <label>
+              <span>預算名稱</span>
+              <input id="budgetName" type="text" maxlength="30" placeholder="例如：六月生活費" required />
+            </label>
+
+            <label>
+              <span>預算金額</span>
+              <input id="budgetAmount" type="number" inputmode="decimal" min="1" step="1" required />
+            </label>
+
+            <label>
+              <span>開始日期</span>
+              <input id="budgetStartDate" type="date" required />
+            </label>
+
+            <label>
+              <span>結束日期</span>
+              <input id="budgetEndDate" type="date" required />
+            </label>
+
+            <label class="full-width">
+              <span>套用錢包</span>
+              <select id="budgetWalletIds" multiple required></select>
+            </label>
+
+            <div class="dialog-actions full-width">
+              <button id="cancelBudgetEditBtn" class="secondary-button hidden" type="button">取消編輯</button>
+              <button id="budgetSubmitBtn" class="primary-button" type="submit">新增預算</button>
+            </div>
+          </form>
+
+          <form id="budgetDeductionForm" class="expense-form wallet-form">
+            <label>
+              <span>預算</span>
+              <select id="deductionBudgetId" required>
+                <option value="">請先新增預算</option>
+              </select>
+            </label>
+
+            <label>
+              <span>錢包</span>
+              <select id="deductionWalletId" required>
+                <option value="">請先新增錢包</option>
+              </select>
+            </label>
+
+            <label>
+              <span>扣款金額</span>
+              <input id="deductionAmount" type="number" inputmode="decimal" min="1" step="1" required />
+            </label>
+
+            <label>
+              <span>日期</span>
+              <input id="deductionDate" type="date" required />
+            </label>
+
+            <label class="full-width">
+              <span>備註</span>
+              <input id="deductionNote" type="text" maxlength="80" placeholder="補記預算扣款..." />
+            </label>
+
+            <label class="checkbox-label full-width">
+              <input id="deductionAffectsWallet" type="checkbox" />
+              <span>同步扣錢包餘額</span>
+            </label>
+
+            <button id="deductionSubmitBtn" class="primary-button full-width" type="submit">新增預算扣款</button>
+          </form>
+
+          <div>
+            <h3>手動扣款</h3>
+            <div id="budgetDeductionList" class="budget-deduction-list"></div>
+          </div>
+        </section>
       </section>
 
       <section class="panel stats-panel">
         <div class="section-heading">
-          <h2>月份統計</h2>
+          <h2>錢包統計</h2>
           <label class="month-control">
             <span>月份</span>
             <input id="monthFilter" type="month" />
@@ -192,12 +279,12 @@
             <strong id="monthlyTotal">NT$ 0</strong>
           </article>
           <article class="summary-card">
-            <span>龍 付款</span>
-            <strong id="dragonTotal">NT$ 0</strong>
+            <span>支出最高錢包</span>
+            <strong id="topWalletTotal">無</strong>
           </article>
           <article class="summary-card">
-            <span>卡皮巴拉 付款</span>
-            <strong id="capybaraTotal">NT$ 0</strong>
+            <span>使用錢包數</span>
+            <strong id="walletCountTotal">0</strong>
           </article>
         </div>
 
@@ -207,7 +294,7 @@
             <p id="chartEmpty" class="empty-chart">這個月份還沒有資料</p>
           </div>
           <div>
-            <h3>分類分析</h3>
+            <h3>錢包分布</h3>
             <div id="categoryStats" class="category-list"></div>
           </div>
         </div>
