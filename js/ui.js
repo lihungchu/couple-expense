@@ -81,6 +81,7 @@ export const dom = {
   categoryStats: document.getElementById("categoryStats"),
   categoryChart: document.getElementById("categoryChart"),
   chartEmpty: document.getElementById("chartEmpty"),
+  expenseMonthFilter: document.getElementById("expenseMonthFilter"),
   expenseList: document.getElementById("expenseList"),
   recordCount: document.getElementById("recordCount"),
   editDialog: document.getElementById("editDialog"),
@@ -247,6 +248,7 @@ export function setSignedOutView() {
   renderWalletTransactions([], []);
   setWalletStatus("");
   renderBudgets([]);
+  renderExpenseMonthOptions([], "");
   setBudgetStatus("");
 }
 
@@ -341,6 +343,33 @@ export function renderStatsWalletOptions(wallets) {
   if (activeWallets.some((wallet) => wallet.id === currentValue)) {
     dom.statsWalletFilter.value = currentValue;
   }
+}
+
+export function renderExpenseMonthOptions(months, preferredMonth) {
+  const currentValue = preferredMonth || dom.expenseMonthFilter.value;
+  dom.expenseMonthFilter.replaceChildren();
+
+  if (!months.length) {
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "尚無支出";
+    dom.expenseMonthFilter.append(empty);
+    dom.expenseMonthFilter.disabled = true;
+    return "";
+  }
+
+  months.forEach((month) => {
+    const option = document.createElement("option");
+    option.value = month;
+    option.textContent = month;
+    dom.expenseMonthFilter.append(option);
+  });
+
+  const selectedMonth = months.includes(currentValue) ? currentValue : months[0];
+  dom.expenseMonthFilter.value = selectedMonth;
+  dom.expenseMonthFilter.disabled = false;
+
+  return selectedMonth;
 }
 
 export function renderBudgetWalletOptions(wallets) {

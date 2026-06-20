@@ -18,6 +18,14 @@ export function filterExpensesByMonth(expenses, month) {
   return expenses.filter((expense) => String(expense.date || "").startsWith(month));
 }
 
+export function getExpenseMonths(expenses) {
+  return [...new Set(
+    expenses
+      .map((expense) => String(expense.date || "").slice(0, 7))
+      .filter((month) => /^\d{4}-\d{2}$/.test(month))
+  )].sort((a, b) => b.localeCompare(a));
+}
+
 export function calculateStats(expenses) {
   const categoryMap = new Map();
   const payerTotals = {

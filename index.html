@@ -268,7 +268,15 @@
       <section class="panel list-panel">
         <div class="section-heading">
           <h2>支出紀錄</h2>
-          <span id="recordCount" class="badge">0 筆</span>
+          <div class="expense-list-controls">
+            <span id="recordCount" class="badge">0 筆</span>
+            <label class="expense-month-control">
+              <span>月份</span>
+              <select id="expenseMonthFilter">
+                <option value="">尚無支出</option>
+              </select>
+            </label>
+          </div>
         </div>
         <div id="expenseList" class="expense-list"></div>
       </section>

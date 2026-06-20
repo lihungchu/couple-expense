@@ -22,7 +22,8 @@ import {
 import {
   calculateBudgetSummaries,
   calculateCategoryStats,
-  filterExpensesByMonth
+  filterExpensesByMonth,
+  getExpenseMonths
 } from "./stats.js";
 import {
   archiveBudget,
@@ -44,6 +45,7 @@ import {
   openEditDialog,
   renderExpenses,
   renderBudgetWalletOptions,
+  renderExpenseMonthOptions,
   renderBudgets,
   renderStatsWalletOptions,
   renderStats,
@@ -128,6 +130,7 @@ dom.expenseForm.addEventListener("submit", async (event) => {
 
 dom.monthFilter.addEventListener("change", refreshView);
 dom.statsWalletFilter.addEventListener("change", refreshView);
+dom.expenseMonthFilter.addEventListener("change", refreshExpenseList);
 
 dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
 
@@ -372,8 +375,18 @@ function refreshView() {
   const stats = calculateCategoryStats(filteredExpenses, dom.statsWalletFilter.value);
 
   renderStats(stats);
-  renderExpenses(filteredExpenses, allWallets);
+  refreshExpenseList();
   refreshBudgetView();
+}
+
+function refreshExpenseList() {
+  const selectedMonth = renderExpenseMonthOptions(
+    getExpenseMonths(allExpenses),
+    dom.expenseMonthFilter.value || currentMonthString()
+  );
+  const visibleExpenses = selectedMonth ? filterExpensesByMonth(allExpenses, selectedMonth) : [];
+
+  renderExpenses(visibleExpenses, allWallets);
 }
 
 function refreshWalletView() {
