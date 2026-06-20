@@ -179,7 +179,7 @@
         <section class="budget-section">
           <div class="section-heading">
             <h2>預算規劃</h2>
-            <span class="badge">依錢包計算</span>
+            <span class="badge">依支出紀錄計算</span>
           </div>
 
           <p id="budgetStatus" class="status-message hidden" role="status"></p>
@@ -218,49 +218,6 @@
               <button id="budgetSubmitBtn" class="primary-button" type="submit">新增預算</button>
             </div>
           </form>
-
-          <form id="budgetDeductionForm" class="expense-form wallet-form">
-            <label>
-              <span>預算</span>
-              <select id="deductionBudgetId" required>
-                <option value="">請先新增預算</option>
-              </select>
-            </label>
-
-            <label>
-              <span>錢包</span>
-              <select id="deductionWalletId" required>
-                <option value="">請先新增錢包</option>
-              </select>
-            </label>
-
-            <label>
-              <span>扣款金額</span>
-              <input id="deductionAmount" type="number" inputmode="decimal" min="1" step="1" required />
-            </label>
-
-            <label>
-              <span>日期</span>
-              <input id="deductionDate" type="date" required />
-            </label>
-
-            <label class="full-width">
-              <span>備註</span>
-              <input id="deductionNote" type="text" maxlength="80" placeholder="補記預算扣款..." />
-            </label>
-
-            <label class="checkbox-label full-width">
-              <input id="deductionAffectsWallet" type="checkbox" />
-              <span>同步扣錢包餘額</span>
-            </label>
-
-            <button id="deductionSubmitBtn" class="primary-button full-width" type="submit">新增預算扣款</button>
-          </form>
-
-          <div>
-            <h3>手動扣款</h3>
-            <div id="budgetDeductionList" class="budget-deduction-list"></div>
-          </div>
         </section>
       </section>
 

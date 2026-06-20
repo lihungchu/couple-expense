@@ -73,15 +73,6 @@ export const dom = {
   budgetWalletIds: document.getElementById("budgetWalletIds"),
   budgetSubmitBtn: document.getElementById("budgetSubmitBtn"),
   cancelBudgetEditBtn: document.getElementById("cancelBudgetEditBtn"),
-  budgetDeductionForm: document.getElementById("budgetDeductionForm"),
-  deductionBudgetId: document.getElementById("deductionBudgetId"),
-  deductionWalletId: document.getElementById("deductionWalletId"),
-  deductionAmount: document.getElementById("deductionAmount"),
-  deductionDate: document.getElementById("deductionDate"),
-  deductionNote: document.getElementById("deductionNote"),
-  deductionAffectsWallet: document.getElementById("deductionAffectsWallet"),
-  deductionSubmitBtn: document.getElementById("deductionSubmitBtn"),
-  budgetDeductionList: document.getElementById("budgetDeductionList"),
   themeBadge: document.getElementById("themeBadge"),
   themeTitle: document.getElementById("themeTitle"),
   themeDescription: document.getElementById("themeDescription"),
@@ -230,31 +221,6 @@ export function getBudgetFromForm() {
   };
 }
 
-export function getBudgetDeductionFromForm() {
-  const amount = Number(dom.deductionAmount.value);
-
-  if (!dom.deductionBudgetId.value) {
-    throw new Error("請選擇預算");
-  }
-
-  if (!dom.deductionWalletId.value) {
-    throw new Error("請選擇錢包");
-  }
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("請輸入正確扣款金額");
-  }
-
-  return {
-    budgetId: dom.deductionBudgetId.value,
-    walletId: dom.deductionWalletId.value,
-    amount,
-    date: dom.deductionDate.value || todayString(),
-    note: dom.deductionNote.value.trim(),
-    affectsWallet: dom.deductionAffectsWallet.checked
-  };
-}
-
 export function setSignedInView(user) {
   dom.loginBtn.classList.add("hidden");
   dom.logoutBtn.classList.remove("hidden");
@@ -279,8 +245,6 @@ export function setSignedOutView() {
   renderWalletTransactions([], []);
   setWalletStatus("");
   renderBudgets([]);
-  renderBudgetOptions([], []);
-  renderBudgetDeductions([], [], []);
   setBudgetStatus("");
 }
 
@@ -321,11 +285,6 @@ export function resetBudgetForm() {
   dom.cancelBudgetEditBtn.classList.add("hidden");
 }
 
-export function resetBudgetDeductionForm() {
-  dom.budgetDeductionForm.reset();
-  dom.deductionDate.value = todayString();
-}
-
 export function setBudgetStatus(message, type = "") {
   dom.budgetStatus.textContent = message;
   dom.budgetStatus.className = `status-message ${type}`.trim();
@@ -352,14 +311,6 @@ export function renderStats(stats) {
 
   drawPieChart(dom.categoryChart, stats.categories);
   renderCategoryStats(stats.categories);
-}
-
-export function renderBudgetOptions(budgets, wallets) {
-  const activeBudgets = budgets.filter((budget) => !budget.archived);
-  const activeWallets = wallets.filter((wallet) => !wallet.archived);
-
-  replaceOptions(dom.deductionBudgetId, activeBudgets, "請選擇預算", (budget) => budget.name);
-  replaceOptions(dom.deductionWalletId, activeWallets, "請選擇錢包", (wallet) => wallet.name);
 }
 
 export function renderBudgetWalletOptions(wallets) {
@@ -404,18 +355,28 @@ export function renderBudgets(budgetSummaries) {
     wallets.className = "budget-wallets";
     wallets.textContent = budget.walletNames.join("、") || "未選錢包";
 
+    const source = document.createElement("p");
+    source.className = "budget-source";
+    source.textContent = "根據支出紀錄計算";
+
     const metrics = document.createElement("div");
     metrics.className = "budget-metrics";
     metrics.append(
       createMetric("預算", formatCurrency(budget.amount)),
-      createMetric("已花費", formatCurrency(budget.spent)),
+      createMetric("期間支出", formatCurrency(budget.spent)),
       createMetric("剩餘", formatCurrency(Math.max(budget.remaining, 0))),
       createMetric("每日可花", formatCurrency(budget.dailyAvailable))
     );
 
     const over = document.createElement("p");
     over.className = "budget-over";
-    over.textContent = budget.overAmount > 0 ? `已超支 ${formatCurrency(budget.overAmount)}` : `${budget.daysLeft} 天可用`;
+    if (budget.overAmount > 0) {
+      over.textContent = `已超支 ${formatCurrency(budget.overAmount)}`;
+    } else if (budget.isExpired) {
+      over.textContent = `已結束，剩餘 ${formatCurrency(Math.max(budget.remaining, 0))}`;
+    } else {
+      over.textContent = `${budget.daysLeft} 天可用`;
+    }
 
     const actions = document.createElement("div");
     actions.className = "budget-actions";
@@ -436,49 +397,8 @@ export function renderBudgets(budgetSummaries) {
 
     actions.append(edit, archive);
     heading.append(title, range);
-    item.append(heading, wallets, metrics, over, actions);
+    item.append(heading, wallets, source, metrics, over, actions);
     dom.budgetList.append(item);
-  });
-}
-
-export function renderBudgetDeductions(deductions, budgets, wallets) {
-  dom.budgetDeductionList.replaceChildren();
-
-  if (!deductions.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "尚無手動扣款";
-    dom.budgetDeductionList.append(empty);
-    return;
-  }
-
-  deductions.slice(0, 8).forEach((deduction) => {
-    const item = document.createElement("article");
-    item.className = "wallet-transaction-item";
-
-    const budget = budgets.find((itemBudget) => itemBudget.id === deduction.budgetId);
-    const wallet = wallets.find((itemWallet) => itemWallet.id === deduction.walletId);
-
-    const title = document.createElement("strong");
-    title.textContent = `${budget?.name || "已封存預算"} · ${wallet?.name || "已封存錢包"}`;
-
-    const meta = document.createElement("span");
-    meta.className = "muted";
-    meta.textContent = `${deduction.date || "未填日期"} · ${deduction.affectsWallet ? "同步扣錢包" : "只扣預算"} · ${deduction.note || "無備註"}`;
-
-    const amount = document.createElement("span");
-    amount.className = "wallet-outflow";
-    amount.textContent = `-${formatCurrency(deduction.amount)}`;
-
-    const remove = document.createElement("button");
-    remove.className = "danger-button compact-button";
-    remove.type = "button";
-    remove.dataset.action = "delete-deduction";
-    remove.dataset.id = deduction.id;
-    remove.textContent = "刪除";
-
-    item.append(title, meta, amount, remove);
-    dom.budgetDeductionList.append(item);
   });
 }
 
@@ -564,27 +484,6 @@ export function renderWalletOptions(wallets) {
       select.value = currentValue;
     }
   });
-}
-
-function replaceOptions(select, items, placeholderText, labelFactory) {
-  const currentValue = select.value;
-  select.replaceChildren();
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = items.length ? placeholderText : "請先新增資料";
-  select.append(placeholder);
-
-  items.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item.id;
-    option.textContent = labelFactory(item);
-    select.append(option);
-  });
-
-  if (items.some((item) => item.id === currentValue)) {
-    select.value = currentValue;
-  }
 }
 
 function createMetric(label, value) {

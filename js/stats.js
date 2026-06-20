@@ -92,7 +92,7 @@ export function isDateInRange(date, startDate, endDate) {
   return Boolean(date && startDate && endDate && date >= startDate && date <= endDate);
 }
 
-export function calculateBudgetSummaries(budgets, expenses, deductions, wallets, today) {
+export function calculateBudgetSummaries(budgets, expenses, wallets, today) {
   const walletMap = new Map(wallets.map((wallet) => [wallet.id, wallet]));
 
   return budgets
@@ -111,15 +111,12 @@ export function calculateBudgetSummaries(budgets, expenses, deductions, wallets,
         return sum + Number(expense.amount || 0);
       }, 0);
 
-      const deductionTotal = deductions
-        .filter((deduction) => deduction.budgetId === budget.id)
-        .reduce((sum, deduction) => sum + Number(deduction.amount || 0), 0);
-
-      const spent = expenseTotal + deductionTotal;
+      const spent = expenseTotal;
       const amount = Number(budget.amount || 0);
       const remaining = amount - spent;
       const daysLeft = calculateDaysLeft(today, budget.endDate);
-      const dailyAvailable = remaining > 0 ? remaining / daysLeft : 0;
+      const isExpired = Boolean(today && budget.endDate && today > budget.endDate);
+      const dailyAvailable = remaining > 0 && !isExpired ? remaining / daysLeft : 0;
       const walletNames = walletIds.map((walletId) => walletMap.get(walletId)?.name || "未連動錢包");
 
       return {
@@ -130,6 +127,7 @@ export function calculateBudgetSummaries(budgets, expenses, deductions, wallets,
         overAmount: remaining < 0 ? Math.abs(remaining) : 0,
         daysLeft,
         dailyAvailable,
+        isExpired,
         walletNames
       };
     })
