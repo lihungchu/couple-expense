@@ -61,10 +61,6 @@ select {
   font: inherit;
 }
 
-select[multiple] {
-  min-height: 120px;
-}
-
 button {
   cursor: pointer;
 }
@@ -379,7 +375,14 @@ select:focus {
   grid-column: 1 / -1;
 }
 
-.month-control {
+.stats-controls {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.month-control,
+.wallet-filter-control {
   width: min(180px, 50vw);
 }
 
@@ -559,6 +562,34 @@ select:focus {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.wallet-checklist {
+  display: grid;
+  gap: 8px;
+}
+
+.wallet-check-option {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.wallet-check-option input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.compact-empty {
+  padding: 12px;
+  text-align: left;
 }
 
 .wallet-card {
@@ -796,8 +827,15 @@ select:focus {
     align-items: flex-start;
   }
 
-  .month-control {
-    width: 144px;
+  .stats-controls {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .month-control,
+  .wallet-filter-control {
+    width: 100%;
   }
 
   .expense-item {

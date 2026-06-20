@@ -59,6 +59,7 @@ export const dom = {
   walletTransactionNote: document.getElementById("walletTransactionNote"),
   walletTransactionList: document.getElementById("walletTransactionList"),
   monthFilter: document.getElementById("monthFilter"),
+  statsWalletFilter: document.getElementById("statsWalletFilter"),
   monthlyTotal: document.getElementById("monthlyTotal"),
   topWalletTotal: document.getElementById("topWalletTotal"),
   walletCountTotal: document.getElementById("walletCountTotal"),
@@ -70,7 +71,7 @@ export const dom = {
   budgetAmount: document.getElementById("budgetAmount"),
   budgetStartDate: document.getElementById("budgetStartDate"),
   budgetEndDate: document.getElementById("budgetEndDate"),
-  budgetWalletIds: document.getElementById("budgetWalletIds"),
+  budgetWalletChecklist: document.getElementById("budgetWalletChecklist"),
   budgetSubmitBtn: document.getElementById("budgetSubmitBtn"),
   cancelBudgetEditBtn: document.getElementById("cancelBudgetEditBtn"),
   themeBadge: document.getElementById("themeBadge"),
@@ -190,7 +191,8 @@ export function getWalletTransactionFromForm() {
 
 export function getBudgetFromForm() {
   const amount = Number(dom.budgetAmount.value);
-  const walletIds = [...dom.budgetWalletIds.selectedOptions].map((option) => option.value);
+  const walletIds = [...dom.budgetWalletChecklist.querySelectorAll("input[type='checkbox']:checked")]
+    .map((input) => input.value);
 
   if (!dom.budgetName.value.trim()) {
     throw new Error("請輸入預算名稱");
@@ -237,8 +239,8 @@ export function setSignedOutView() {
   renderStats({
     total: 0,
     categories: [],
-    topWallet: null,
-    walletCount: 0
+    topCategory: null,
+    categoryCount: 0
   });
   renderWallets([]);
   renderWalletOptions([]);
@@ -281,6 +283,11 @@ export function resetBudgetForm() {
   dom.budgetId.value = "";
   dom.budgetStartDate.value = todayString();
   dom.budgetEndDate.value = todayString();
+  dom.budgetWalletChecklist
+    .querySelectorAll("input[type='checkbox']")
+    .forEach((input) => {
+      input.checked = false;
+    });
   dom.budgetSubmitBtn.textContent = "新增預算";
   dom.cancelBudgetEditBtn.classList.add("hidden");
 }
@@ -303,26 +310,70 @@ export function updateWalletTransactionMode() {
 
 export function renderStats(stats) {
   dom.monthlyTotal.textContent = formatCurrency(stats.total);
-  dom.topWalletTotal.textContent = stats.topWallet
-    ? `${stats.topWallet.name} ${formatCurrency(stats.topWallet.amount)}`
+  dom.topWalletTotal.textContent = stats.topCategory
+    ? `${stats.topCategory.name} ${formatCurrency(stats.topCategory.amount)}`
     : "無";
-  dom.walletCountTotal.textContent = `${stats.walletCount}`;
+  dom.walletCountTotal.textContent = `${stats.categoryCount || 0}`;
   dom.chartEmpty.classList.toggle("hidden", stats.categories.length > 0);
 
   drawPieChart(dom.categoryChart, stats.categories);
   renderCategoryStats(stats.categories);
 }
 
-export function renderBudgetWalletOptions(wallets) {
-  const selected = new Set([...dom.budgetWalletIds.selectedOptions].map((option) => option.value));
-  dom.budgetWalletIds.replaceChildren();
+export function renderStatsWalletOptions(wallets) {
+  const activeWallets = wallets.filter((wallet) => !wallet.archived);
+  const currentValue = dom.statsWalletFilter.value;
 
-  wallets.filter((wallet) => !wallet.archived).forEach((wallet) => {
+  dom.statsWalletFilter.replaceChildren();
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "全部錢包";
+  dom.statsWalletFilter.append(allOption);
+
+  activeWallets.forEach((wallet) => {
     const option = document.createElement("option");
     option.value = wallet.id;
     option.textContent = wallet.name;
-    option.selected = selected.has(wallet.id);
-    dom.budgetWalletIds.append(option);
+    dom.statsWalletFilter.append(option);
+  });
+
+  if (activeWallets.some((wallet) => wallet.id === currentValue)) {
+    dom.statsWalletFilter.value = currentValue;
+  }
+}
+
+export function renderBudgetWalletOptions(wallets) {
+  const selected = new Set(
+    [...dom.budgetWalletChecklist.querySelectorAll("input[type='checkbox']:checked")]
+      .map((input) => input.value)
+  );
+  const activeWallets = wallets.filter((wallet) => !wallet.archived);
+
+  dom.budgetWalletChecklist.replaceChildren();
+
+  if (!activeWallets.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state compact-empty";
+    empty.textContent = "請先新增錢包";
+    dom.budgetWalletChecklist.append(empty);
+    return;
+  }
+
+  activeWallets.forEach((wallet) => {
+    const option = document.createElement("label");
+    option.className = "wallet-check-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = wallet.id;
+    input.checked = selected.has(wallet.id);
+
+    const text = document.createElement("span");
+    text.textContent = `${wallet.name} (${formatCurrency(wallet.balance)})`;
+
+    option.append(input, text);
+    dom.budgetWalletChecklist.append(option);
   });
 }
 
@@ -409,8 +460,8 @@ export function openBudgetEdit(budget) {
   dom.budgetStartDate.value = budget.startDate || todayString();
   dom.budgetEndDate.value = budget.endDate || todayString();
 
-  [...dom.budgetWalletIds.options].forEach((option) => {
-    option.selected = (budget.walletIds || []).includes(option.value);
+  [...dom.budgetWalletChecklist.querySelectorAll("input[type='checkbox']")].forEach((input) => {
+    input.checked = (budget.walletIds || []).includes(input.value);
   });
 
   dom.budgetSubmitBtn.textContent = "儲存預算";

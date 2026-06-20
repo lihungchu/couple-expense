@@ -21,7 +21,7 @@ import {
 } from "./wallets.js";
 import {
   calculateBudgetSummaries,
-  calculateWalletStats,
+  calculateCategoryStats,
   filterExpensesByMonth
 } from "./stats.js";
 import {
@@ -45,6 +45,7 @@ import {
   renderExpenses,
   renderBudgetWalletOptions,
   renderBudgets,
+  renderStatsWalletOptions,
   renderStats,
   renderWalletOptions,
   renderWallets,
@@ -126,6 +127,7 @@ dom.expenseForm.addEventListener("submit", async (event) => {
 });
 
 dom.monthFilter.addEventListener("change", refreshView);
+dom.statsWalletFilter.addEventListener("change", refreshView);
 
 dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
 
@@ -367,7 +369,7 @@ if ("serviceWorker" in navigator) {
 
 function refreshView() {
   const filteredExpenses = filterExpensesByMonth(allExpenses, dom.monthFilter.value);
-  const stats = calculateWalletStats(filteredExpenses, allWallets);
+  const stats = calculateCategoryStats(filteredExpenses, dom.statsWalletFilter.value);
 
   renderStats(stats);
   renderExpenses(filteredExpenses, allWallets);
@@ -378,6 +380,7 @@ function refreshWalletView() {
   renderWallets(allWallets);
   renderWalletOptions(allWallets);
   renderBudgetWalletOptions(allWallets);
+  renderStatsWalletOptions(allWallets);
   renderWalletTransactions(allWalletTransactions, allWallets);
   refreshBudgetView();
 }

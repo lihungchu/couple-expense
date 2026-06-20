@@ -55,36 +55,34 @@ export function calculateStats(expenses) {
   };
 }
 
-export function calculateWalletStats(expenses, wallets) {
-  const walletMap = new Map(wallets.map((wallet) => [wallet.id, wallet]));
-  const walletTotals = new Map();
+export function calculateCategoryStats(expenses, walletId = "") {
+  const filteredExpenses = walletId
+    ? expenses.filter((expense) => expense.walletId === walletId)
+    : expenses;
+  const categoryTotals = new Map();
   let total = 0;
 
-  expenses.forEach((expense) => {
+  filteredExpenses.forEach((expense) => {
     const amount = Number(expense.amount || 0);
-    const walletId = expense.walletId || "__unlinked__";
-    const wallet = walletMap.get(walletId);
-    const name = wallet?.name || "未連動錢包";
+    const category = expense.category || "其他";
 
     total += amount;
-    walletTotals.set(walletId, {
-      name,
-      amount: (walletTotals.get(walletId)?.amount || 0) + amount
-    });
+    categoryTotals.set(category, (categoryTotals.get(category) || 0) + amount);
   });
 
-  const categories = [...walletTotals.values()]
-    .map((walletTotal) => ({
-      ...walletTotal,
-      percent: total > 0 ? walletTotal.amount / total : 0
+  const categories = [...categoryTotals.entries()]
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      percent: total > 0 ? amount / total : 0
     }))
     .sort((a, b) => b.amount - a.amount);
 
   return {
     total,
     categories,
-    topWallet: categories[0] || null,
-    walletCount: categories.length
+    topCategory: categories[0] || null,
+    categoryCount: categories.length
   };
 }
 

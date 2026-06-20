@@ -210,7 +210,7 @@
 
             <label class="full-width">
               <span>套用錢包</span>
-              <select id="budgetWalletIds" multiple required></select>
+              <div id="budgetWalletChecklist" class="wallet-checklist" role="group" aria-label="套用錢包"></div>
             </label>
 
             <div class="dialog-actions full-width">
@@ -224,10 +224,18 @@
       <section class="panel stats-panel">
         <div class="section-heading">
           <h2>錢包統計</h2>
-          <label class="month-control">
-            <span>月份</span>
-            <input id="monthFilter" type="month" />
-          </label>
+          <div class="stats-controls">
+            <label class="month-control">
+              <span>月份</span>
+              <input id="monthFilter" type="month" />
+            </label>
+            <label class="wallet-filter-control">
+              <span>統計錢包</span>
+              <select id="statsWalletFilter">
+                <option value="">全部錢包</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div class="summary-grid">
@@ -236,11 +244,11 @@
             <strong id="monthlyTotal">NT$ 0</strong>
           </article>
           <article class="summary-card">
-            <span>支出最高錢包</span>
+            <span>支出最高分類</span>
             <strong id="topWalletTotal">無</strong>
           </article>
           <article class="summary-card">
-            <span>使用錢包數</span>
+            <span>使用分類數</span>
             <strong id="walletCountTotal">0</strong>
           </article>
         </div>
@@ -251,7 +259,7 @@
             <p id="chartEmpty" class="empty-chart">這個月份還沒有資料</p>
           </div>
           <div>
-            <h3>錢包分布</h3>
+            <h3>分類分布</h3>
             <div id="categoryStats" class="category-list"></div>
           </div>
         </div>
