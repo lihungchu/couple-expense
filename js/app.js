@@ -79,6 +79,8 @@ let unsubscribeExpenses = null;
 let unsubscribeWallets = null;
 let unsubscribeWalletTransactions = null;
 let unsubscribeBudgets = null;
+const WALLET_TRANSACTION_PAGE_SIZE = 20;
+let walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
 
 const savedMode = localStorage.getItem("mode");
 localStorage.removeItem("theme");
@@ -175,11 +177,25 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
-    await createWalletTransaction(getWalletTransactionFromForm());
+    const entry = getWalletTransactionFromForm();
+    await createWalletTransaction(entry);
     resetWalletTransactionForm();
+    dom.walletTransactionFilter.value = ["income", "transfer"].includes(entry.type) ? "editable" : entry.type;
+    walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
+    refreshWalletView();
   } catch (error) {
     alert(error.message);
   }
+});
+
+dom.walletTransactionFilter.addEventListener("change", () => {
+  walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
+  refreshWalletView();
+});
+
+dom.showMoreWalletTransactionsBtn.addEventListener("click", () => {
+  walletTransactionLimit += WALLET_TRANSACTION_PAGE_SIZE;
+  refreshWalletView();
 });
 
 dom.walletTransactionList.addEventListener("click", async (event) => {
@@ -448,7 +464,10 @@ function refreshWalletView() {
   renderWalletOptions(allWallets);
   renderBudgetWalletOptions(allWallets);
   renderStatsWalletOptions(allWallets);
-  renderWalletTransactions(allWalletTransactions, allWallets);
+  renderWalletTransactions(allWalletTransactions, allWallets, {
+    filter: dom.walletTransactionFilter.value,
+    limit: walletTransactionLimit
+  });
   refreshBudgetView();
 }
 

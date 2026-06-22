@@ -171,9 +171,25 @@
           <button class="primary-button full-width" type="submit">新增錢包交易</button>
         </form>
 
-        <div>
-          <h3>錢包流水</h3>
+        <div class="wallet-transaction-panel">
+          <div class="section-heading wallet-transaction-heading">
+            <h3>錢包流水</h3>
+            <label class="inline-control">
+              <span>類型</span>
+              <select id="walletTransactionFilter">
+                <option value="all">全部流水</option>
+                <option value="editable">可編輯流水</option>
+                <option value="income">收入</option>
+                <option value="transfer">轉帳</option>
+                <option value="expense">支出</option>
+                <option value="adjustment">調整</option>
+              </select>
+            </label>
+          </div>
           <div id="walletTransactionList" class="wallet-transaction-list"></div>
+          <button id="showMoreWalletTransactionsBtn" class="secondary-button compact-button full-width hidden" type="button">
+            顯示更多流水
+          </button>
         </div>
 
         <section class="budget-section">

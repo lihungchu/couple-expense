@@ -57,7 +57,9 @@ export const dom = {
   walletTransactionAmount: document.getElementById("walletTransactionAmount"),
   walletTransactionDate: document.getElementById("walletTransactionDate"),
   walletTransactionNote: document.getElementById("walletTransactionNote"),
+  walletTransactionFilter: document.getElementById("walletTransactionFilter"),
   walletTransactionList: document.getElementById("walletTransactionList"),
+  showMoreWalletTransactionsBtn: document.getElementById("showMoreWalletTransactionsBtn"),
   walletTransactionEditDialog: document.getElementById("walletTransactionEditDialog"),
   walletTransactionEditForm: document.getElementById("walletTransactionEditForm"),
   editWalletTransactionId: document.getElementById("editWalletTransactionId"),
@@ -627,18 +629,25 @@ function createMetric(label, value) {
   return item;
 }
 
-export function renderWalletTransactions(transactions, wallets) {
-  dom.walletTransactionList.replaceChildren();
+export function renderWalletTransactions(transactions, wallets, options = {}) {
+  const filter = options.filter || "all";
+  const limit = options.limit || 20;
+  const filteredTransactions = transactions.filter((entry) => isWalletTransactionVisible(entry, filter));
+  const visibleTransactions = filteredTransactions.slice(0, limit);
 
-  if (!transactions.length) {
+  dom.walletTransactionList.replaceChildren();
+  dom.showMoreWalletTransactionsBtn.classList.toggle("hidden", filteredTransactions.length <= limit);
+  dom.showMoreWalletTransactionsBtn.textContent = `顯示更多流水（還有 ${Math.max(filteredTransactions.length - limit, 0)} 筆）`;
+
+  if (!filteredTransactions.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "尚無錢包流水";
+    empty.textContent = filter === "editable" ? "目前沒有可編輯的手動收入或轉帳" : "尚無錢包流水";
     dom.walletTransactionList.append(empty);
     return;
   }
 
-  transactions.slice(0, 8).forEach((entry) => {
+  visibleTransactions.forEach((entry) => {
     const item = document.createElement("article");
     item.className = "wallet-transaction-item";
 
@@ -679,6 +688,11 @@ export function renderWalletTransactions(transactions, wallets) {
 
       actions.append(edit, remove);
       item.append(actions);
+    } else {
+      const note = document.createElement("span");
+      note.className = "transaction-edit-note";
+      note.textContent = getWalletTransactionEditNote(entry);
+      item.append(note);
     }
 
     dom.walletTransactionList.append(item);
@@ -736,6 +750,34 @@ function renderManualWalletTransactionWalletOptions(wallets, entry) {
 
 function isManualEditableWalletTransaction(entry) {
   return ["income", "transfer"].includes(entry.type) && !entry.expenseId && !entry.budgetId;
+}
+
+function isWalletTransactionVisible(entry, filter) {
+  if (filter === "all") {
+    return true;
+  }
+
+  if (filter === "editable") {
+    return isManualEditableWalletTransaction(entry);
+  }
+
+  return entry.type === filter;
+}
+
+function getWalletTransactionEditNote(entry) {
+  if (entry.type === "expense" || entry.expenseId) {
+    return "由支出紀錄控制";
+  }
+
+  if (entry.type === "adjustment") {
+    return "調整紀錄不可直接修改";
+  }
+
+  if (entry.type === "budgetDeduction" || entry.budgetId) {
+    return "預算相關流水不可直接修改";
+  }
+
+  return "此流水不可直接修改";
 }
 
 function getTransactionTitle(entry, wallets) {
