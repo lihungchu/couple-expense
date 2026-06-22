@@ -178,6 +178,122 @@ export function createWalletTransaction(entry) {
   });
 }
 
+export function removeManualWalletTransaction(entry) {
+  const transactionRef = doc(db, "walletTransactions", entry.id);
+
+  return runTransaction(db, async (transaction) => {
+    const transactionSnapshot = await transaction.get(transactionRef);
+    const currentEntry = {
+      id: entry.id,
+      ...transactionSnapshot.data()
+    };
+    const updatedAt = serverTimestamp();
+
+    validateManualWalletTransaction(currentEntry);
+    reverseWalletTransaction(transaction, currentEntry, updatedAt);
+    transaction.delete(transactionRef);
+  });
+}
+
+export function saveManualWalletTransaction(transactionId, nextEntry) {
+  const transactionRef = doc(db, "walletTransactions", transactionId);
+  const amount = Number(nextEntry.amount || 0);
+
+  return runTransaction(db, async (transaction) => {
+    const transactionSnapshot = await transaction.get(transactionRef);
+    const previousEntry = {
+      id: transactionId,
+      ...transactionSnapshot.data()
+    };
+    const updatedAt = serverTimestamp();
+    const normalizedNextEntry = {
+      type: nextEntry.type,
+      walletId: nextEntry.walletId,
+      toWalletId: nextEntry.type === "transfer" ? nextEntry.toWalletId : "",
+      amount,
+      date: nextEntry.date,
+      note: nextEntry.note || ""
+    };
+
+    validateManualWalletTransaction(previousEntry);
+    validateManualWalletTransaction(normalizedNextEntry);
+
+    reverseWalletTransaction(transaction, previousEntry, updatedAt);
+    applyWalletTransaction(transaction, normalizedNextEntry, updatedAt);
+
+    transaction.update(transactionRef, {
+      ...normalizedNextEntry,
+      updatedAt
+    });
+  });
+}
+
+function validateManualWalletTransaction(entry) {
+  const amount = Number(entry.amount || 0);
+
+  if (!entry || !["income", "transfer"].includes(entry.type) || entry.expenseId || entry.budgetId) {
+    throw new Error("這筆流水不能在錢包流水中編輯或刪除");
+  }
+
+  if (!entry.walletId) {
+    throw new Error("流水缺少來源錢包");
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("請輸入正確金額");
+  }
+
+  if (entry.type === "transfer" && !entry.toWalletId) {
+    throw new Error("轉帳缺少目標錢包");
+  }
+
+  if (entry.type === "transfer" && entry.walletId === entry.toWalletId) {
+    throw new Error("來源錢包和目標錢包不能相同");
+  }
+}
+
+function reverseWalletTransaction(transaction, entry, updatedAt) {
+  const amount = Number(entry.amount || 0);
+
+  if (entry.type === "income") {
+    transaction.update(doc(db, "wallets", entry.walletId), {
+      balance: increment(-amount),
+      updatedAt
+    });
+    return;
+  }
+
+  transaction.update(doc(db, "wallets", entry.walletId), {
+    balance: increment(amount),
+    updatedAt
+  });
+  transaction.update(doc(db, "wallets", entry.toWalletId), {
+    balance: increment(-amount),
+    updatedAt
+  });
+}
+
+function applyWalletTransaction(transaction, entry, updatedAt) {
+  const amount = Number(entry.amount || 0);
+
+  if (entry.type === "income") {
+    transaction.update(doc(db, "wallets", entry.walletId), {
+      balance: increment(amount),
+      updatedAt
+    });
+    return;
+  }
+
+  transaction.update(doc(db, "wallets", entry.walletId), {
+    balance: increment(-amount),
+    updatedAt
+  });
+  transaction.update(doc(db, "wallets", entry.toWalletId), {
+    balance: increment(amount),
+    updatedAt
+  });
+}
+
 export function createExpenseWithWallet(expense) {
   const expenseRef = doc(expensesRef);
   const transactionRef = doc(db, "walletTransactions", `expense_${expenseRef.id}`);

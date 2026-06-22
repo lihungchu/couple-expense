@@ -14,7 +14,9 @@ import {
   createExpenseWithWallet,
   createWallet,
   createWalletTransaction,
+  removeManualWalletTransaction,
   removeExpenseWithWallet,
+  saveManualWalletTransaction,
   saveExpenseWithWallet,
   subscribeWallets,
   subscribeWalletTransactions
@@ -39,10 +41,13 @@ import {
   getNextTheme,
   getBudgetFromForm,
   getExpenseFromForm,
+  getManualWalletTransactionFromForm,
   getWalletFromForm,
   getWalletTransactionFromForm,
   openBudgetEdit,
   openEditDialog,
+  openManualWalletTransactionDialog,
+  closeManualWalletTransactionDialog,
   renderExpenses,
   renderBudgetWalletOptions,
   renderExpenseMonthOptions,
@@ -62,6 +67,7 @@ import {
   setSignedInView,
   setSignedOutView,
   todayString,
+  updateManualWalletTransactionMode,
   updateWalletTransactionMode
 } from "./ui.js";
 
@@ -133,6 +139,7 @@ dom.statsWalletFilter.addEventListener("change", refreshView);
 dom.expenseMonthFilter.addEventListener("change", refreshExpenseList);
 
 dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
+dom.editWalletTransactionType.addEventListener("change", updateManualWalletTransactionMode);
 
 dom.createDefaultWalletsBtn.addEventListener("click", async () => {
   setWalletBusy(true);
@@ -170,6 +177,51 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
   try {
     await createWalletTransaction(getWalletTransactionFromForm());
     resetWalletTransactionForm();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+dom.walletTransactionList.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const entry = allWalletTransactions.find((item) => item.id === button.dataset.id);
+
+  if (!entry) {
+    return;
+  }
+
+  if (button.dataset.action === "edit-wallet-transaction") {
+    openManualWalletTransactionDialog(entry, allWallets);
+    return;
+  }
+
+  if (button.dataset.action === "delete-wallet-transaction") {
+    const confirmed = confirm("確定要刪除這筆錢包流水嗎？錢包餘額會自動回復。");
+
+    if (confirmed) {
+      try {
+        await removeManualWalletTransaction(entry);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+  }
+});
+
+dom.walletTransactionEditForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await saveManualWalletTransaction(
+      dom.editWalletTransactionId.value,
+      getManualWalletTransactionFromForm()
+    );
+    closeManualWalletTransactionDialog();
   } catch (error) {
     alert(error.message);
   }
@@ -286,6 +338,8 @@ dom.editForm.addEventListener("submit", async (event) => {
 
 dom.closeEditBtn.addEventListener("click", closeEditDialog);
 dom.cancelEditBtn.addEventListener("click", closeEditDialog);
+dom.closeWalletTransactionEditBtn.addEventListener("click", closeManualWalletTransactionDialog);
+dom.cancelWalletTransactionEditBtn.addEventListener("click", closeManualWalletTransactionDialog);
 
 onAuthStateChanged(auth, (user) => {
   if (unsubscribeExpenses) {

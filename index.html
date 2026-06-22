@@ -343,6 +343,59 @@
     </form>
   </dialog>
 
+  <dialog id="walletTransactionEditDialog" class="edit-dialog">
+    <form id="walletTransactionEditForm" class="expense-form dialog-card" method="dialog">
+      <div class="section-heading full-width">
+        <h2>編輯錢包流水</h2>
+        <button id="closeWalletTransactionEditBtn" class="icon-button" type="button" aria-label="關閉編輯視窗" title="關閉">×</button>
+      </div>
+
+      <input id="editWalletTransactionId" type="hidden" />
+
+      <label>
+        <span>交易類型</span>
+        <select id="editWalletTransactionType" required>
+          <option value="income">收入</option>
+          <option value="transfer">轉帳</option>
+        </select>
+      </label>
+
+      <label>
+        <span>來源錢包</span>
+        <select id="editTransactionWalletId" required>
+          <option value="">請選擇來源錢包</option>
+        </select>
+      </label>
+
+      <label id="editToWalletField">
+        <span>目標錢包</span>
+        <select id="editTransactionToWalletId">
+          <option value="">請選擇目標錢包</option>
+        </select>
+      </label>
+
+      <label>
+        <span>金額</span>
+        <input id="editWalletTransactionAmount" type="number" inputmode="decimal" step="1" min="1" required />
+      </label>
+
+      <label>
+        <span>日期</span>
+        <input id="editWalletTransactionDate" type="date" required />
+      </label>
+
+      <label class="full-width">
+        <span>備註</span>
+        <input id="editWalletTransactionNote" type="text" maxlength="80" />
+      </label>
+
+      <div class="dialog-actions full-width">
+        <button id="cancelWalletTransactionEditBtn" class="secondary-button" type="button">取消</button>
+        <button class="primary-button" type="submit">儲存變更</button>
+      </div>
+    </form>
+  </dialog>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

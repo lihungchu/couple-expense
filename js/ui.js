@@ -58,6 +58,18 @@ export const dom = {
   walletTransactionDate: document.getElementById("walletTransactionDate"),
   walletTransactionNote: document.getElementById("walletTransactionNote"),
   walletTransactionList: document.getElementById("walletTransactionList"),
+  walletTransactionEditDialog: document.getElementById("walletTransactionEditDialog"),
+  walletTransactionEditForm: document.getElementById("walletTransactionEditForm"),
+  editWalletTransactionId: document.getElementById("editWalletTransactionId"),
+  editWalletTransactionType: document.getElementById("editWalletTransactionType"),
+  editTransactionWalletId: document.getElementById("editTransactionWalletId"),
+  editTransactionToWalletId: document.getElementById("editTransactionToWalletId"),
+  editToWalletField: document.getElementById("editToWalletField"),
+  editWalletTransactionAmount: document.getElementById("editWalletTransactionAmount"),
+  editWalletTransactionDate: document.getElementById("editWalletTransactionDate"),
+  editWalletTransactionNote: document.getElementById("editWalletTransactionNote"),
+  closeWalletTransactionEditBtn: document.getElementById("closeWalletTransactionEditBtn"),
+  cancelWalletTransactionEditBtn: document.getElementById("cancelWalletTransactionEditBtn"),
   monthFilter: document.getElementById("monthFilter"),
   statsWalletFilter: document.getElementById("statsWalletFilter"),
   monthlyTotal: document.getElementById("monthlyTotal"),
@@ -190,6 +202,36 @@ export function getWalletTransactionFromForm() {
   };
 }
 
+export function getManualWalletTransactionFromForm() {
+  const type = dom.editWalletTransactionType.value;
+  const amount = Number(dom.editWalletTransactionAmount.value);
+
+  if (!dom.editTransactionWalletId.value) {
+    throw new Error("請選擇來源錢包");
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("請輸入正確金額");
+  }
+
+  if (type === "transfer" && !dom.editTransactionToWalletId.value) {
+    throw new Error("請選擇目標錢包");
+  }
+
+  if (type === "transfer" && dom.editTransactionWalletId.value === dom.editTransactionToWalletId.value) {
+    throw new Error("來源錢包和目標錢包不能相同");
+  }
+
+  return {
+    type,
+    walletId: dom.editTransactionWalletId.value,
+    toWalletId: type === "transfer" ? dom.editTransactionToWalletId.value : "",
+    amount,
+    date: dom.editWalletTransactionDate.value || todayString(),
+    note: dom.editWalletTransactionNote.value.trim()
+  };
+}
+
 export function getBudgetFromForm() {
   const amount = Number(dom.budgetAmount.value);
   const walletIds = [...dom.budgetWalletChecklist.querySelectorAll("input[type='checkbox']:checked")]
@@ -308,6 +350,13 @@ export function updateWalletTransactionMode() {
   dom.toWalletField.classList.toggle("hidden", !isTransfer);
   dom.transactionToWalletId.required = isTransfer;
   dom.walletTransactionAmountLabel.textContent = isAdjustment ? "調整後餘額" : "金額";
+}
+
+export function updateManualWalletTransactionMode() {
+  const isTransfer = dom.editWalletTransactionType.value === "transfer";
+
+  dom.editToWalletField.classList.toggle("hidden", !isTransfer);
+  dom.editTransactionToWalletId.required = isTransfer;
 }
 
 export function renderStats(stats) {
@@ -609,8 +658,84 @@ export function renderWalletTransactions(transactions, wallets) {
     amount.textContent = `${isOutflow ? "-" : ""}${formatCurrency(Math.abs(entry.amount || 0))}`;
 
     item.append(title, meta, amount);
+
+    if (isManualEditableWalletTransaction(entry)) {
+      const actions = document.createElement("div");
+      actions.className = "wallet-transaction-actions";
+
+      const edit = document.createElement("button");
+      edit.className = "secondary-button compact-button";
+      edit.type = "button";
+      edit.dataset.action = "edit-wallet-transaction";
+      edit.dataset.id = entry.id;
+      edit.textContent = "編輯";
+
+      const remove = document.createElement("button");
+      remove.className = "danger-button compact-button";
+      remove.type = "button";
+      remove.dataset.action = "delete-wallet-transaction";
+      remove.dataset.id = entry.id;
+      remove.textContent = "刪除";
+
+      actions.append(edit, remove);
+      item.append(actions);
+    }
+
     dom.walletTransactionList.append(item);
   });
+}
+
+export function openManualWalletTransactionDialog(entry, wallets) {
+  renderManualWalletTransactionWalletOptions(wallets, entry);
+
+  dom.editWalletTransactionId.value = entry.id;
+  dom.editWalletTransactionType.value = entry.type;
+  dom.editTransactionWalletId.value = entry.walletId || "";
+  dom.editTransactionToWalletId.value = entry.toWalletId || "";
+  dom.editWalletTransactionAmount.value = Number(entry.amount || 0);
+  dom.editWalletTransactionDate.value = entry.date || todayString();
+  dom.editWalletTransactionNote.value = entry.note || "";
+  updateManualWalletTransactionMode();
+
+  if (typeof dom.walletTransactionEditDialog.showModal === "function") {
+    dom.walletTransactionEditDialog.showModal();
+  } else {
+    dom.walletTransactionEditDialog.setAttribute("open", "");
+  }
+}
+
+export function closeManualWalletTransactionDialog() {
+  if (typeof dom.walletTransactionEditDialog.close === "function") {
+    dom.walletTransactionEditDialog.close();
+  } else {
+    dom.walletTransactionEditDialog.removeAttribute("open");
+  }
+}
+
+function renderManualWalletTransactionWalletOptions(wallets, entry) {
+  const walletIds = new Set([entry.walletId, entry.toWalletId].filter(Boolean));
+  const selectableWallets = wallets.filter((wallet) => !wallet.archived || walletIds.has(wallet.id));
+  const selects = [dom.editTransactionWalletId, dom.editTransactionToWalletId];
+
+  selects.forEach((select) => {
+    select.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "請選擇錢包";
+    select.append(placeholder);
+
+    selectableWallets.forEach((wallet) => {
+      const option = document.createElement("option");
+      option.value = wallet.id;
+      option.textContent = wallet.archived ? `${wallet.name}（已封存）` : wallet.name;
+      select.append(option);
+    });
+  });
+}
+
+function isManualEditableWalletTransaction(entry) {
+  return ["income", "transfer"].includes(entry.type) && !entry.expenseId && !entry.budgetId;
 }
 
 function getTransactionTitle(entry, wallets) {
