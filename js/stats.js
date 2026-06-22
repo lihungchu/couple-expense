@@ -26,6 +26,22 @@ export function getExpenseMonths(expenses) {
   )].sort((a, b) => b.localeCompare(a));
 }
 
+export function filterExpensesByDate(expenses, date) {
+  if (!date) {
+    return [];
+  }
+
+  return expenses.filter((expense) => expense.date === date);
+}
+
+export function getExpenseDates(expenses) {
+  return [...new Set(
+    expenses
+      .map((expense) => String(expense.date || ""))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+  )].sort((a, b) => b.localeCompare(a));
+}
+
 export function calculateStats(expenses) {
   const categoryMap = new Map();
   const payerTotals = {

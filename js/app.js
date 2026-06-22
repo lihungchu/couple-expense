@@ -24,8 +24,9 @@ import {
 import {
   calculateBudgetSummaries,
   calculateCategoryStats,
+  filterExpensesByDate,
   filterExpensesByMonth,
-  getExpenseMonths
+  getExpenseDates
 } from "./stats.js";
 import {
   archiveBudget,
@@ -50,7 +51,7 @@ import {
   closeManualWalletTransactionDialog,
   renderExpenses,
   renderBudgetWalletOptions,
-  renderExpenseMonthOptions,
+  renderExpenseDateFilter,
   renderBudgets,
   renderStatsWalletOptions,
   renderStats,
@@ -138,7 +139,7 @@ dom.expenseForm.addEventListener("submit", async (event) => {
 
 dom.monthFilter.addEventListener("change", refreshView);
 dom.statsWalletFilter.addEventListener("change", refreshView);
-dom.expenseMonthFilter.addEventListener("change", refreshExpenseList);
+dom.expenseDateFilter.addEventListener("change", refreshExpenseList);
 
 dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
 dom.editWalletTransactionType.addEventListener("change", updateManualWalletTransactionMode);
@@ -450,11 +451,11 @@ function refreshView() {
 }
 
 function refreshExpenseList() {
-  const selectedMonth = renderExpenseMonthOptions(
-    getExpenseMonths(allExpenses),
-    dom.expenseMonthFilter.value || currentMonthString()
+  const selectedDate = renderExpenseDateFilter(
+    getExpenseDates(allExpenses),
+    dom.expenseDateFilter.value || todayString()
   );
-  const visibleExpenses = selectedMonth ? filterExpensesByMonth(allExpenses, selectedMonth) : [];
+  const visibleExpenses = selectedDate ? filterExpensesByDate(allExpenses, selectedDate) : [];
 
   renderExpenses(visibleExpenses, allWallets);
 }

@@ -409,7 +409,7 @@ select:focus {
 
 .month-control,
 .wallet-filter-control,
-.expense-month-control {
+.expense-date-control {
   width: min(180px, 50vw);
 }
 
@@ -912,7 +912,7 @@ select:focus {
 
   .month-control,
   .wallet-filter-control,
-  .expense-month-control {
+  .expense-date-control {
     width: 100%;
   }
 

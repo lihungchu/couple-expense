@@ -95,7 +95,7 @@ export const dom = {
   categoryStats: document.getElementById("categoryStats"),
   categoryChart: document.getElementById("categoryChart"),
   chartEmpty: document.getElementById("chartEmpty"),
-  expenseMonthFilter: document.getElementById("expenseMonthFilter"),
+  expenseDateFilter: document.getElementById("expenseDateFilter"),
   expenseList: document.getElementById("expenseList"),
   recordCount: document.getElementById("recordCount"),
   editDialog: document.getElementById("editDialog"),
@@ -292,7 +292,7 @@ export function setSignedOutView() {
   renderWalletTransactions([], []);
   setWalletStatus("");
   renderBudgets([]);
-  renderExpenseMonthOptions([], "");
+  renderExpenseDateFilter([], "");
   setBudgetStatus("");
 }
 
@@ -396,31 +396,20 @@ export function renderStatsWalletOptions(wallets) {
   }
 }
 
-export function renderExpenseMonthOptions(months, preferredMonth) {
-  const currentValue = preferredMonth || dom.expenseMonthFilter.value;
-  dom.expenseMonthFilter.replaceChildren();
+export function renderExpenseDateFilter(dates, preferredDate) {
+  const currentValue = preferredDate || dom.expenseDateFilter.value;
 
-  if (!months.length) {
-    const empty = document.createElement("option");
-    empty.value = "";
-    empty.textContent = "尚無支出";
-    dom.expenseMonthFilter.append(empty);
-    dom.expenseMonthFilter.disabled = true;
+  if (!dates.length) {
+    dom.expenseDateFilter.value = "";
+    dom.expenseDateFilter.disabled = true;
     return "";
   }
 
-  months.forEach((month) => {
-    const option = document.createElement("option");
-    option.value = month;
-    option.textContent = month;
-    dom.expenseMonthFilter.append(option);
-  });
+  const selectedDate = dates.includes(currentValue) ? currentValue : dates[0];
+  dom.expenseDateFilter.value = selectedDate;
+  dom.expenseDateFilter.disabled = false;
 
-  const selectedMonth = months.includes(currentValue) ? currentValue : months[0];
-  dom.expenseMonthFilter.value = selectedMonth;
-  dom.expenseMonthFilter.disabled = false;
-
-  return selectedMonth;
+  return selectedDate;
 }
 
 export function renderBudgetWalletOptions(wallets) {
@@ -846,7 +835,7 @@ export function renderExpenses(expenses, wallets = []) {
   if (!expenses.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "這個月份還沒有支出紀錄";
+    empty.textContent = "這個日期還沒有支出紀錄";
     dom.expenseList.append(empty);
     return;
   }
