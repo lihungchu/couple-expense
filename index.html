@@ -174,17 +174,23 @@
         <div class="wallet-transaction-panel">
           <div class="section-heading wallet-transaction-heading">
             <h3>錢包流水</h3>
-            <label class="inline-control">
-              <span>類型</span>
-              <select id="walletTransactionFilter">
-                <option value="all">全部流水</option>
-                <option value="editable">可編輯流水</option>
-                <option value="income">收入</option>
-                <option value="transfer">轉帳</option>
-                <option value="expense">支出</option>
-                <option value="adjustment">調整</option>
-              </select>
-            </label>
+            <div class="wallet-transaction-controls">
+              <label class="inline-control">
+                <span>日期</span>
+                <input id="walletTransactionDateFilter" type="date" disabled />
+              </label>
+              <label class="inline-control">
+                <span>類型</span>
+                <select id="walletTransactionFilter">
+                  <option value="all">全部流水</option>
+                  <option value="editable">可編輯流水</option>
+                  <option value="income">收入</option>
+                  <option value="transfer">轉帳</option>
+                  <option value="expense">支出</option>
+                  <option value="adjustment">調整</option>
+                </select>
+              </label>
+            </div>
           </div>
           <div id="walletTransactionList" class="wallet-transaction-list"></div>
           <button id="showMoreWalletTransactionsBtn" class="secondary-button compact-button full-width hidden" type="button">

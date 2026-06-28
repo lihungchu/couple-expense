@@ -55,6 +55,8 @@ import {
   renderBudgets,
   renderStatsWalletOptions,
   renderStats,
+  getWalletTransactionDates,
+  renderWalletTransactionDateFilter,
   renderWalletOptions,
   renderWallets,
   renderWalletTransactions,
@@ -193,6 +195,7 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
     const entry = getWalletTransactionFromForm();
     await createWalletTransaction(entry);
     resetWalletTransactionForm();
+    dom.walletTransactionDateFilter.value = entry.date || todayString();
     dom.walletTransactionFilter.value = ["income", "transfer"].includes(entry.type) ? "editable" : entry.type;
     walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
     refreshWalletView();
@@ -202,6 +205,11 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
 });
 
 dom.walletTransactionFilter.addEventListener("change", () => {
+  walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
+  refreshWalletView();
+});
+
+dom.walletTransactionDateFilter.addEventListener("change", () => {
   walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
   refreshWalletView();
 });
@@ -499,11 +507,17 @@ function refreshExpenseList() {
 }
 
 function refreshWalletView() {
+  const selectedTransactionDate = renderWalletTransactionDateFilter(
+    getWalletTransactionDates(allWalletTransactions),
+    dom.walletTransactionDateFilter.value || todayString()
+  );
+
   renderWallets(allWallets);
   renderWalletOptions(allWallets);
   renderBudgetWalletOptions(allWallets);
   renderStatsWalletOptions(allWallets);
   renderWalletTransactions(allWalletTransactions, allWallets, {
+    date: selectedTransactionDate,
     filter: dom.walletTransactionFilter.value,
     limit: walletTransactionLimit
   });

@@ -59,6 +59,7 @@ export const dom = {
   walletTransactionAmount: document.getElementById("walletTransactionAmount"),
   walletTransactionDate: document.getElementById("walletTransactionDate"),
   walletTransactionNote: document.getElementById("walletTransactionNote"),
+  walletTransactionDateFilter: document.getElementById("walletTransactionDateFilter"),
   walletTransactionFilter: document.getElementById("walletTransactionFilter"),
   walletTransactionList: document.getElementById("walletTransactionList"),
   showMoreWalletTransactionsBtn: document.getElementById("showMoreWalletTransactionsBtn"),
@@ -293,6 +294,7 @@ export function setSignedOutView() {
   });
   renderWallets([]);
   renderWalletOptions([]);
+  renderWalletTransactionDateFilter([], "");
   renderWalletTransactions([], []);
   setWalletStatus("");
   renderBudgets([]);
@@ -638,10 +640,37 @@ function createMetric(label, value) {
   return item;
 }
 
+export function renderWalletTransactionDateFilter(dates, preferredDate) {
+  const currentValue = preferredDate || dom.walletTransactionDateFilter.value;
+
+  if (!dates.length) {
+    dom.walletTransactionDateFilter.value = "";
+    dom.walletTransactionDateFilter.disabled = true;
+    return "";
+  }
+
+  const selectedDate = dates.includes(currentValue) ? currentValue : dates[0];
+  dom.walletTransactionDateFilter.value = selectedDate;
+  dom.walletTransactionDateFilter.disabled = false;
+
+  return selectedDate;
+}
+
+export function getWalletTransactionDates(transactions) {
+  return [...new Set(
+    transactions
+      .map((entry) => String(entry.date || ""))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+  )].sort((a, b) => b.localeCompare(a));
+}
+
 export function renderWalletTransactions(transactions, wallets, options = {}) {
   const filter = options.filter || "all";
+  const date = options.date || "";
   const limit = options.limit || 20;
-  const filteredTransactions = transactions.filter((entry) => isWalletTransactionVisible(entry, filter));
+  const filteredTransactions = transactions
+    .filter((entry) => !date || entry.date === date)
+    .filter((entry) => isWalletTransactionVisible(entry, filter));
   const visibleTransactions = filteredTransactions.slice(0, limit);
 
   dom.walletTransactionList.replaceChildren();
@@ -651,7 +680,7 @@ export function renderWalletTransactions(transactions, wallets, options = {}) {
   if (!filteredTransactions.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = filter === "editable" ? "目前沒有可編輯的手動收入或轉帳" : "尚無錢包流水";
+    empty.textContent = getWalletTransactionEmptyText(filter, date);
     dom.walletTransactionList.append(empty);
     return;
   }
@@ -787,6 +816,18 @@ function getWalletTransactionEditNote(entry) {
   }
 
   return "此流水不可直接修改";
+}
+
+function getWalletTransactionEmptyText(filter, date) {
+  if (!date) {
+    return "尚無錢包流水";
+  }
+
+  if (filter === "editable") {
+    return "這個日期沒有可編輯的手動收入或轉帳";
+  }
+
+  return "這個日期沒有錢包流水";
 }
 
 function getTransactionTitle(entry, wallets) {
