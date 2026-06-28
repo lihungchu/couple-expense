@@ -42,7 +42,7 @@
     </section>
 
     <section id="appArea" class="workspace hidden" aria-live="polite">
-      <section class="panel entry-panel">
+      <section class="panel entry-panel app-view" data-view="entry">
         <div class="section-heading">
           <h2>新增支出</h2>
           <span class="badge">共同花費</span>
@@ -97,7 +97,7 @@
         </form>
       </section>
 
-      <section class="panel wallet-panel">
+      <section class="panel wallet-panel app-view" data-view="wallet">
         <div class="section-heading">
           <h2>共同錢包</h2>
           <button id="createDefaultWalletsBtn" class="secondary-button compact-button" type="button">建立預設錢包</button>
@@ -237,7 +237,7 @@
         </section>
       </section>
 
-      <section class="panel stats-panel">
+      <section class="panel stats-panel app-view" data-view="stats">
         <div class="section-heading">
           <h2>錢包統計</h2>
           <div class="stats-controls">
@@ -281,7 +281,7 @@
         </div>
       </section>
 
-      <section class="panel list-panel">
+      <section class="panel list-panel app-view" data-view="records">
         <div class="section-heading">
           <h2>支出紀錄</h2>
           <div class="expense-list-controls">
@@ -294,6 +294,25 @@
         </div>
         <div id="expenseList" class="expense-list"></div>
       </section>
+
+      <nav class="bottom-nav" aria-label="主要功能">
+        <button class="bottom-nav-button" type="button" data-target-view="entry" aria-pressed="true">
+          <span>＋</span>
+          新增
+        </button>
+        <button class="bottom-nav-button" type="button" data-target-view="wallet" aria-pressed="false">
+          <span>錢</span>
+          錢包
+        </button>
+        <button class="bottom-nav-button" type="button" data-target-view="stats" aria-pressed="false">
+          <span>圖</span>
+          統計
+        </button>
+        <button class="bottom-nav-button" type="button" data-target-view="records" aria-pressed="false">
+          <span>記</span>
+          紀錄
+        </button>
+      </nav>
     </section>
   </main>
 

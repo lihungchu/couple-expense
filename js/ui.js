@@ -33,6 +33,8 @@ export const dom = {
   logoutBtn: document.getElementById("logoutBtn"),
   userInfo: document.getElementById("userInfo"),
   appArea: document.getElementById("appArea"),
+  appViews: [...document.querySelectorAll("[data-view]")],
+  bottomNavButtons: [...document.querySelectorAll("[data-target-view]")],
   expenseForm: document.getElementById("expenseForm"),
   date: document.getElementById("date"),
   amount: document.getElementById("amount"),
@@ -272,6 +274,7 @@ export function setSignedInView(user) {
   dom.loginBtn.classList.add("hidden");
   dom.logoutBtn.classList.remove("hidden");
   dom.appArea.classList.remove("hidden");
+  document.body.classList.add("is-signed-in");
   dom.userInfo.textContent = `目前登入：${user.email}`;
 }
 
@@ -279,6 +282,7 @@ export function setSignedOutView() {
   dom.loginBtn.classList.remove("hidden");
   dom.logoutBtn.classList.add("hidden");
   dom.appArea.classList.add("hidden");
+  document.body.classList.remove("is-signed-in");
   dom.userInfo.textContent = "請先使用 Google 登入";
   renderExpenses([]);
   renderStats({
@@ -294,6 +298,22 @@ export function setSignedOutView() {
   renderBudgets([]);
   renderExpenseDateFilter([], "");
   setBudgetStatus("");
+}
+
+export function setActiveView(view) {
+  const activeView = dom.appViews.some((item) => item.dataset.view === view) ? view : "entry";
+
+  dom.appViews.forEach((item) => {
+    item.classList.toggle("active-view", item.dataset.view === activeView);
+  });
+
+  dom.bottomNavButtons.forEach((button) => {
+    const isActive = button.dataset.targetView === activeView;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  return activeView;
 }
 
 export function resetAddForm() {

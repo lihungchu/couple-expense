@@ -64,6 +64,7 @@ import {
   resetWalletTransactionForm,
   setWalletBusy,
   setWalletStatus,
+  setActiveView,
   setBudgetStatus,
   setSignedInView,
   setSignedOutView,
@@ -84,6 +85,7 @@ const WALLET_TRANSACTION_PAGE_SIZE = 20;
 let walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
 
 const savedMode = localStorage.getItem("mode");
+const savedView = localStorage.getItem("activeView") || "entry";
 localStorage.removeItem("theme");
 
 dom.date.value = todayString();
@@ -93,6 +95,7 @@ dom.budgetStartDate.value = todayString();
 dom.budgetEndDate.value = todayString();
 updateWalletTransactionMode();
 applyTheme(savedMode || "capybara");
+setActiveView(savedView);
 
 dom.loginBtn.addEventListener("click", async () => {
   try {
@@ -112,6 +115,14 @@ dom.themeToggle.addEventListener("click", () => {
   localStorage.setItem("mode", nextTheme);
   applyTheme(nextTheme);
   refreshView();
+});
+
+dom.bottomNavButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const activeView = setActiveView(button.dataset.targetView);
+    localStorage.setItem("activeView", activeView);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 });
 
 dom.expenseForm.addEventListener("submit", async (event) => {
