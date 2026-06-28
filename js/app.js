@@ -87,6 +87,7 @@ let walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
 const savedMode = localStorage.getItem("mode");
 const savedView = localStorage.getItem("activeView") || "entry";
 localStorage.removeItem("theme");
+sessionStorage.removeItem("sw-refreshing");
 
 dom.date.value = todayString();
 dom.monthFilter.value = currentMonthString();
@@ -448,8 +449,34 @@ onAuthStateChanged(auth, (user) => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    registerServiceWorker();
   });
+}
+
+function registerServiceWorker() {
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing || sessionStorage.getItem("sw-refreshing") === "true") {
+      return;
+    }
+
+    refreshing = true;
+    sessionStorage.setItem("sw-refreshing", "true");
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register("sw.js")
+    .then((registration) => {
+      registration.update().catch(() => {});
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(() => {});
+        }
+      });
+    })
+    .catch(() => {});
 }
 
 function refreshView() {
