@@ -59,6 +59,7 @@ button,
 input,
 select {
   font: inherit;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -422,11 +423,14 @@ label {
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 700;
+  max-width: 100%;
+  min-width: 0;
 }
 
 input,
 select {
   width: 100%;
+  max-width: 100%;
   min-height: 46px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -434,6 +438,15 @@ select {
   color: var(--text);
   padding: 10px 12px;
   outline: none;
+}
+
+input[type="date"],
+input[type="month"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 input:focus,
@@ -449,6 +462,7 @@ select:focus {
 .stats-controls {
   display: flex;
   align-items: end;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
 }
@@ -456,7 +470,8 @@ select:focus {
 .inline-control {
   display: grid;
   gap: 6px;
-  min-width: 180px;
+  width: min(180px, 100%);
+  min-width: 0;
 }
 
 .inline-control span {
@@ -469,11 +484,14 @@ select:focus {
 .wallet-filter-control,
 .expense-date-control {
   width: min(180px, 50vw);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .expense-list-controls {
   display: flex;
   align-items: end;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
 }
@@ -589,6 +607,7 @@ select:focus {
 .wallet-transaction-controls {
   display: flex;
   align-items: end;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
 }
