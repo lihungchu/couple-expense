@@ -114,7 +114,7 @@ export function isDateInRange(date, startDate, endDate) {
   return Boolean(date && startDate && endDate && date >= startDate && date <= endDate);
 }
 
-export function calculateBudgetSummaries(budgets, expenses, wallets, today) {
+export function calculateBudgetSummaries(budgets, expenses, wallets, today, walletTransactions = []) {
   const walletMap = new Map(wallets.map((wallet) => [wallet.id, wallet]));
 
   return budgets
@@ -132,8 +132,25 @@ export function calculateBudgetSummaries(budgets, expenses, wallets, today) {
 
         return sum + Number(expense.amount || 0);
       }, 0);
+      const adjustmentTotal = walletTransactions.reduce((sum, entry) => {
+        if (entry.type !== "adjustment" || entry.affectsBudget !== true) {
+          return sum;
+        }
 
-      const spent = expenseTotal;
+        if (!isDateInRange(entry.date, budget.startDate, budget.endDate)) {
+          return sum;
+        }
+
+        if (!walletIds.includes(entry.walletId || "__unlinked__")) {
+          return sum;
+        }
+
+        const difference = Number(entry.amount || 0);
+
+        return difference < 0 ? sum + Math.abs(difference) : sum;
+      }, 0);
+
+      const spent = expenseTotal + adjustmentTotal;
       const amount = Number(budget.amount || 0);
       const remaining = amount - spent;
       const daysLeft = calculateDaysLeft(today, budget.endDate);

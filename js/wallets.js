@@ -99,6 +99,7 @@ export function createWallet(wallet) {
         date: wallet.date,
         note: "初始餘額",
         expenseId: "",
+        affectsBudget: false,
         createdAt
       });
     }
@@ -160,6 +161,7 @@ export function createWalletTransaction(entry) {
         date: entry.date,
         note: entry.note || "",
         expenseId: "",
+        affectsBudget: entry.affectsBudget === true,
         createdAt
       });
       return;
@@ -197,7 +199,6 @@ export function removeManualWalletTransaction(entry) {
 
 export function saveManualWalletTransaction(transactionId, nextEntry) {
   const transactionRef = doc(db, "walletTransactions", transactionId);
-  const amount = Number(nextEntry.amount || 0);
 
   return runTransaction(db, async (transaction) => {
     const transactionSnapshot = await transaction.get(transactionRef);
@@ -206,14 +207,22 @@ export function saveManualWalletTransaction(transactionId, nextEntry) {
       ...transactionSnapshot.data()
     };
     const updatedAt = serverTimestamp();
-    const normalizedNextEntry = {
-      type: nextEntry.type,
-      walletId: nextEntry.walletId,
-      toWalletId: nextEntry.type === "transfer" ? nextEntry.toWalletId : "",
-      amount,
-      date: nextEntry.date,
-      note: nextEntry.note || ""
-    };
+
+    if (previousEntry.type === "adjustment" || nextEntry.type === "adjustment") {
+      const normalizedNextEntry = normalizeAdjustmentEntry(nextEntry);
+
+      validateAdjustmentWalletTransaction(previousEntry);
+      validateAdjustmentWalletTransaction(normalizedNextEntry);
+      await applyAdjustmentUpdate(transaction, previousEntry, normalizedNextEntry, updatedAt);
+
+      transaction.update(transactionRef, {
+        ...normalizedNextEntry,
+        updatedAt
+      });
+      return;
+    }
+
+    const normalizedNextEntry = normalizeManualWalletEntry(nextEntry);
 
     validateManualWalletTransaction(previousEntry);
     validateManualWalletTransaction(normalizedNextEntry);
@@ -226,6 +235,35 @@ export function saveManualWalletTransaction(transactionId, nextEntry) {
       updatedAt
     });
   });
+}
+
+function normalizeManualWalletEntry(entry) {
+  const amount = Number(entry.amount || 0);
+
+  return {
+    type: entry.type,
+    walletId: entry.walletId,
+    toWalletId: entry.type === "transfer" ? entry.toWalletId : "",
+    amount,
+    date: entry.date,
+    note: entry.note || ""
+  };
+}
+
+function normalizeAdjustmentEntry(entry) {
+  const targetBalance = Number(entry.amount || entry.targetBalance || 0);
+
+  return {
+    type: "adjustment",
+    walletId: entry.walletId,
+    toWalletId: "",
+    amount: 0,
+    targetBalance,
+    date: entry.date,
+    note: entry.note || "",
+    expenseId: "",
+    affectsBudget: entry.affectsBudget === true
+  };
 }
 
 function validateManualWalletTransaction(entry) {
@@ -250,6 +288,58 @@ function validateManualWalletTransaction(entry) {
   if (entry.type === "transfer" && entry.walletId === entry.toWalletId) {
     throw new Error("來源錢包和目標錢包不能相同");
   }
+}
+
+function validateAdjustmentWalletTransaction(entry) {
+  const targetBalance = Number(entry.targetBalance);
+
+  if (!entry || entry.type !== "adjustment" || entry.expenseId || entry.budgetId) {
+    throw new Error("這筆調整流水不能編輯");
+  }
+
+  if (!entry.walletId) {
+    throw new Error("調整流水缺少來源錢包");
+  }
+
+  if (!Number.isFinite(targetBalance)) {
+    throw new Error("調整流水缺少調整後餘額");
+  }
+}
+
+async function applyAdjustmentUpdate(transaction, previousEntry, nextEntry, updatedAt) {
+  const previousDifference = Number(previousEntry.amount || 0);
+  const nextTargetBalance = Number(nextEntry.targetBalance);
+  const previousWalletRef = doc(db, "wallets", previousEntry.walletId);
+  const nextWalletRef = doc(db, "wallets", nextEntry.walletId);
+  const previousWalletSnapshot = await transaction.get(previousWalletRef);
+  const nextWalletSnapshot = previousEntry.walletId === nextEntry.walletId
+    ? previousWalletSnapshot
+    : await transaction.get(nextWalletRef);
+  const previousCurrentBalance = Number(previousWalletSnapshot.data()?.balance || 0);
+  const nextCurrentBalance = Number(nextWalletSnapshot.data()?.balance || 0);
+  const baseBalance = previousEntry.walletId === nextEntry.walletId
+    ? previousCurrentBalance - previousDifference
+    : nextCurrentBalance;
+  const nextDifference = nextTargetBalance - baseBalance;
+
+  if (previousEntry.walletId === nextEntry.walletId) {
+    transaction.update(previousWalletRef, {
+      balance: increment(nextDifference - previousDifference),
+      updatedAt
+    });
+  } else {
+    transaction.update(previousWalletRef, {
+      balance: increment(-previousDifference),
+      updatedAt
+    });
+
+    transaction.update(nextWalletRef, {
+      balance: increment(nextDifference),
+      updatedAt
+    });
+  }
+
+  nextEntry.amount = nextDifference;
 }
 
 function reverseWalletTransaction(transaction, entry, updatedAt) {

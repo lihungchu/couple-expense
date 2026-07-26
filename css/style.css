@@ -427,10 +427,30 @@ label {
   min-width: 0;
 }
 
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.check-row input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
 input,
 select {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   min-height: 46px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -444,9 +464,18 @@ input[type="date"],
 input[type="month"] {
   -webkit-appearance: none;
   appearance: none;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="month"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
 }
 
 input:focus,
@@ -472,6 +501,7 @@ select:focus {
   gap: 6px;
   width: min(180px, 100%);
   min-width: 0;
+  max-width: 100%;
 }
 
 .inline-control span {
@@ -484,6 +514,18 @@ select:focus {
 .wallet-filter-control,
 .expense-date-control {
   width: min(180px, 50vw);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.month-control input,
+.month-control select,
+.wallet-filter-control input,
+.wallet-filter-control select,
+.expense-date-control input,
+.expense-date-control select,
+.wallet-transaction-controls input,
+.wallet-transaction-controls select {
   max-width: 100%;
   min-width: 0;
 }

@@ -168,6 +168,11 @@
             <input id="walletTransactionNote" type="text" maxlength="80" placeholder="薪水、轉帳、校正..." />
           </label>
 
+          <label id="walletTransactionBudgetField" class="check-row full-width hidden">
+            <input id="walletTransactionAffectsBudget" type="checkbox" />
+            <span>加入預算</span>
+          </label>
+
           <button class="primary-button full-width" type="submit">新增錢包交易</button>
         </form>
 
@@ -396,6 +401,7 @@
         <select id="editWalletTransactionType" required>
           <option value="income">收入</option>
           <option value="transfer">轉帳</option>
+          <option value="adjustment">調整餘額</option>
         </select>
       </label>
 
@@ -414,7 +420,7 @@
       </label>
 
       <label>
-        <span>金額</span>
+        <span id="editWalletTransactionAmountLabel">金額</span>
         <input id="editWalletTransactionAmount" type="number" inputmode="decimal" step="1" min="1" required />
       </label>
 
@@ -426,6 +432,11 @@
       <label class="full-width">
         <span>備註</span>
         <input id="editWalletTransactionNote" type="text" maxlength="80" />
+      </label>
+
+      <label id="editWalletTransactionBudgetField" class="check-row full-width hidden">
+        <input id="editWalletTransactionAffectsBudget" type="checkbox" />
+        <span>加入預算</span>
       </label>
 
       <div class="dialog-actions full-width">

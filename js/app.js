@@ -196,7 +196,7 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
     await createWalletTransaction(entry);
     resetWalletTransactionForm();
     dom.walletTransactionDateFilter.value = entry.date || todayString();
-    dom.walletTransactionFilter.value = ["income", "transfer"].includes(entry.type) ? "editable" : entry.type;
+    dom.walletTransactionFilter.value = ["income", "transfer", "adjustment"].includes(entry.type) ? "editable" : entry.type;
     walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
     refreshWalletView();
   } catch (error) {
@@ -539,7 +539,8 @@ function refreshBudgetView() {
     allBudgets,
     allExpenses,
     allWallets,
-    todayString()
+    todayString(),
+    allWalletTransactions
   );
 
   renderBudgets(summaries);
