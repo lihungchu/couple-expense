@@ -149,8 +149,23 @@ export function calculateBudgetSummaries(budgets, expenses, wallets, today, wall
 
         return difference < 0 ? sum + Math.abs(difference) : sum;
       }, 0);
+      const topupTotal = walletTransactions.reduce((sum, entry) => {
+        if (entry.type !== "topup" || entry.affectsBudget !== true) {
+          return sum;
+        }
 
-      const spent = expenseTotal + adjustmentTotal;
+        if (!isDateInRange(entry.date, budget.startDate, budget.endDate)) {
+          return sum;
+        }
+
+        if (!walletIds.includes(entry.walletId || "__unlinked__")) {
+          return sum;
+        }
+
+        return sum + Number(entry.amount || 0);
+      }, 0);
+
+      const spent = expenseTotal + adjustmentTotal + topupTotal;
       const amount = Number(budget.amount || 0);
       const remaining = amount - spent;
       const daysLeft = calculateDaysLeft(today, budget.endDate);

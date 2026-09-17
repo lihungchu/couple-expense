@@ -155,7 +155,10 @@ dom.monthFilter.addEventListener("change", refreshView);
 dom.statsWalletFilter.addEventListener("change", refreshView);
 dom.expenseDateFilter.addEventListener("change", refreshExpenseList);
 
-dom.walletTransactionType.addEventListener("change", updateWalletTransactionMode);
+dom.walletTransactionType.addEventListener("change", () => {
+  updateWalletTransactionMode();
+  renderWalletOptions(allWallets);
+});
 dom.editWalletTransactionType.addEventListener("change", updateManualWalletTransactionMode);
 
 dom.createDefaultWalletsBtn.addEventListener("click", async () => {
@@ -196,7 +199,7 @@ dom.walletTransactionForm.addEventListener("submit", async (event) => {
     await createWalletTransaction(entry);
     resetWalletTransactionForm();
     dom.walletTransactionDateFilter.value = entry.date || todayString();
-    dom.walletTransactionFilter.value = ["income", "transfer", "adjustment"].includes(entry.type) ? "editable" : entry.type;
+    dom.walletTransactionFilter.value = ["income", "transfer", "topup", "adjustment"].includes(entry.type) ? "editable" : entry.type;
     walletTransactionLimit = WALLET_TRANSACTION_PAGE_SIZE;
     refreshWalletView();
   } catch (error) {
@@ -315,9 +318,24 @@ dom.budgetList.addEventListener("click", async (event) => {
 });
 
 dom.walletList.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-action='archive-wallet']");
+  const button = event.target.closest("button[data-action]");
 
   if (!button) {
+    return;
+  }
+
+  if (button.dataset.action === "topup-wallet") {
+    dom.walletTransactionType.value = "topup";
+    updateWalletTransactionMode();
+    renderWalletOptions(allWallets);
+    dom.transactionToWalletId.value = button.dataset.id;
+    dom.walletTransactionDate.value = todayString();
+    dom.walletTransactionAmount.focus();
+    dom.walletTransactionForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  if (button.dataset.action !== "archive-wallet") {
     return;
   }
 

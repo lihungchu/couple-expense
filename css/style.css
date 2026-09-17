@@ -799,6 +799,13 @@ select:focus {
   white-space: nowrap;
 }
 
+.wallet-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
 .wallet-transaction-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1102,6 +1109,15 @@ select:focus {
   .wallet-card,
   .wallet-transaction-item {
     grid-template-columns: 1fr;
+  }
+
+  .wallet-card-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .wallet-card-actions button {
+    width: 100%;
   }
 
   .wallet-balance,

@@ -8,7 +8,7 @@ const modes = {
     label: "卡皮巴拉模式",
     title: "柔柔地一起記帳",
     description: "淺紫和淺黃色的療癒帳本，把共同花費整理得輕鬆一點。",
-    image: "assets/illustrations/capybara-mode.png?v=3",
+    image: "assets/illustrations/capybara-mode.png?v=4",
     alt: "可愛卡皮巴拉插圖"
   },
   dragon: {
@@ -17,7 +17,7 @@ const modes = {
     label: "龍模式",
     title: "帥氣地掌控花費",
     description: "黑紅閃電風格的共同帳本，讓每一筆支出都俐落有氣勢。",
-    image: "assets/illustrations/dragon-mode.png?v=3",
+    image: "assets/illustrations/dragon-mode.png?v=4",
     alt: "黑紅閃電龍插圖"
   }
 };
@@ -194,22 +194,22 @@ export function getWalletTransactionFromForm() {
     throw new Error("請輸入正確金額");
   }
 
-  if (type === "transfer" && !dom.transactionToWalletId.value) {
+  if (["transfer", "topup"].includes(type) && !dom.transactionToWalletId.value) {
     throw new Error("請選擇目標錢包");
   }
 
-  if (type === "transfer" && dom.transactionWalletId.value === dom.transactionToWalletId.value) {
+  if (["transfer", "topup"].includes(type) && dom.transactionWalletId.value === dom.transactionToWalletId.value) {
     throw new Error("來源錢包和目標錢包不能相同");
   }
 
   return {
     type,
     walletId: dom.transactionWalletId.value,
-    toWalletId: type === "transfer" ? dom.transactionToWalletId.value : "",
+    toWalletId: ["transfer", "topup"].includes(type) ? dom.transactionToWalletId.value : "",
     amount,
     date: dom.walletTransactionDate.value || todayString(),
     note: dom.walletTransactionNote.value.trim(),
-    affectsBudget: type === "adjustment" && dom.walletTransactionAffectsBudget.checked
+    affectsBudget: type === "topup" || (type === "adjustment" && dom.walletTransactionAffectsBudget.checked)
   };
 }
 
@@ -225,22 +225,22 @@ export function getManualWalletTransactionFromForm() {
     throw new Error("請輸入正確金額");
   }
 
-  if (type === "transfer" && !dom.editTransactionToWalletId.value) {
+  if (["transfer", "topup"].includes(type) && !dom.editTransactionToWalletId.value) {
     throw new Error("請選擇目標錢包");
   }
 
-  if (type === "transfer" && dom.editTransactionWalletId.value === dom.editTransactionToWalletId.value) {
+  if (["transfer", "topup"].includes(type) && dom.editTransactionWalletId.value === dom.editTransactionToWalletId.value) {
     throw new Error("來源錢包和目標錢包不能相同");
   }
 
   return {
     type,
     walletId: dom.editTransactionWalletId.value,
-    toWalletId: type === "transfer" ? dom.editTransactionToWalletId.value : "",
+    toWalletId: ["transfer", "topup"].includes(type) ? dom.editTransactionToWalletId.value : "",
     amount,
     date: dom.editWalletTransactionDate.value || todayString(),
     note: dom.editWalletTransactionNote.value.trim(),
-    affectsBudget: type === "adjustment" && dom.editWalletTransactionAffectsBudget.checked
+    affectsBudget: type === "topup" || (type === "adjustment" && dom.editWalletTransactionAffectsBudget.checked)
   };
 }
 
@@ -376,11 +376,12 @@ export function setBudgetStatus(message, type = "") {
 
 export function updateWalletTransactionMode() {
   const type = dom.walletTransactionType.value;
-  const isTransfer = type === "transfer";
+  const needsTarget = ["transfer", "topup"].includes(type);
   const isAdjustment = type === "adjustment";
 
-  dom.toWalletField.classList.toggle("hidden", !isTransfer);
-  dom.transactionToWalletId.required = isTransfer;
+  dom.toWalletField.classList.toggle("hidden", !needsTarget);
+  dom.transactionToWalletId.required = needsTarget;
+  dom.toWalletField.querySelector("span").textContent = type === "topup" ? "儲值到共享錢包" : "目標錢包";
   dom.walletTransactionBudgetField.classList.toggle("hidden", !isAdjustment);
   dom.walletTransactionAmountLabel.textContent = isAdjustment ? "調整後餘額" : "金額";
   dom.walletTransactionAmount.min = isAdjustment ? "0" : "1";
@@ -388,11 +389,12 @@ export function updateWalletTransactionMode() {
 
 export function updateManualWalletTransactionMode() {
   const type = dom.editWalletTransactionType.value;
-  const isTransfer = type === "transfer";
+  const needsTarget = ["transfer", "topup"].includes(type);
   const isAdjustment = type === "adjustment";
 
-  dom.editToWalletField.classList.toggle("hidden", !isTransfer);
-  dom.editTransactionToWalletId.required = isTransfer;
+  dom.editToWalletField.classList.toggle("hidden", !needsTarget);
+  dom.editTransactionToWalletId.required = needsTarget;
+  dom.editToWalletField.querySelector("span").textContent = type === "topup" ? "儲值到共享錢包" : "目標錢包";
   dom.editWalletTransactionBudgetField.classList.toggle("hidden", !isAdjustment);
   dom.editWalletTransactionAmountLabel.textContent = isAdjustment ? "調整後餘額" : "金額";
   dom.editWalletTransactionAmount.min = isAdjustment ? "0" : "1";
@@ -611,15 +613,30 @@ export function renderWallets(wallets) {
     archiveBtn.dataset.id = wallet.id;
     archiveBtn.textContent = "封存";
 
+    const actions = document.createElement("div");
+    actions.className = "wallet-card-actions";
+
+    if (wallet.owner === "共同") {
+      const topupBtn = document.createElement("button");
+      topupBtn.className = "secondary-button compact-button";
+      topupBtn.type = "button";
+      topupBtn.dataset.action = "topup-wallet";
+      topupBtn.dataset.id = wallet.id;
+      topupBtn.textContent = "儲值";
+      actions.append(topupBtn);
+    }
+
+    actions.append(archiveBtn);
     body.append(name, owner);
-    item.append(body, balance, archiveBtn);
+    item.append(body, balance, actions);
     dom.walletList.append(item);
   });
 }
 
 export function renderWalletOptions(wallets) {
   const activeWallets = wallets.filter((wallet) => !wallet.archived);
-  const selects = [dom.walletId, dom.editWalletId, dom.transactionWalletId, dom.transactionToWalletId];
+  const commonWallets = activeWallets.filter((wallet) => wallet.owner === "共同");
+  const selects = [dom.walletId, dom.editWalletId, dom.transactionWalletId];
 
   selects.forEach((select) => {
     const currentValue = select.value;
@@ -641,6 +658,8 @@ export function renderWalletOptions(wallets) {
       select.value = currentValue;
     }
   });
+
+  renderWalletSelect(dom.transactionToWalletId, dom.walletTransactionType.value === "topup" ? commonWallets : activeWallets);
 }
 
 function createMetric(label, value) {
@@ -714,6 +733,7 @@ export function renderWalletTransactions(transactions, wallets, options = {}) {
     const amount = document.createElement("span");
     const isOutflow = entry.type === "expense"
       || entry.type === "transfer"
+      || entry.type === "topup"
       || entry.type === "budgetDeduction"
       || entry.amount < 0;
     amount.className = isOutflow ? "wallet-outflow" : "wallet-inflow";
@@ -790,8 +810,10 @@ function configureManualWalletTransactionTypeOptions(type) {
   [...dom.editWalletTransactionType.options].forEach((option) => {
     if (type === "adjustment") {
       option.disabled = option.value !== "adjustment";
+    } else if (type === "topup") {
+      option.disabled = option.value !== "topup";
     } else {
-      option.disabled = option.value === "adjustment";
+      option.disabled = option.value === "adjustment" || option.value === "topup";
     }
   });
 }
@@ -807,9 +829,14 @@ export function closeManualWalletTransactionDialog() {
 function renderManualWalletTransactionWalletOptions(wallets, entry) {
   const walletIds = new Set([entry.walletId, entry.toWalletId].filter(Boolean));
   const selectableWallets = wallets.filter((wallet) => !wallet.archived || walletIds.has(wallet.id));
+  const selectableCommonWallets = selectableWallets.filter((wallet) => wallet.owner === "共同" || walletIds.has(wallet.id));
   const selects = [dom.editTransactionWalletId, dom.editTransactionToWalletId];
 
   selects.forEach((select) => {
+    const options = select === dom.editTransactionToWalletId && entry.type === "topup"
+      ? selectableCommonWallets
+      : selectableWallets;
+
     select.replaceChildren();
 
     const placeholder = document.createElement("option");
@@ -817,7 +844,7 @@ function renderManualWalletTransactionWalletOptions(wallets, entry) {
     placeholder.textContent = "請選擇錢包";
     select.append(placeholder);
 
-    selectableWallets.forEach((wallet) => {
+    options.forEach((wallet) => {
       const option = document.createElement("option");
       option.value = wallet.id;
       option.textContent = wallet.archived ? `${wallet.name}（已封存）` : wallet.name;
@@ -829,11 +856,11 @@ function renderManualWalletTransactionWalletOptions(wallets, entry) {
 function isEditableWalletTransaction(entry) {
   return !entry.expenseId
     && !entry.budgetId
-    && ["income", "transfer", "adjustment"].includes(entry.type);
+    && ["income", "transfer", "topup", "adjustment"].includes(entry.type);
 }
 
 function isDeletableWalletTransaction(entry) {
-  return ["income", "transfer"].includes(entry.type) && !entry.expenseId && !entry.budgetId;
+  return ["income", "transfer", "topup"].includes(entry.type) && !entry.expenseId && !entry.budgetId;
 }
 
 function isWalletTransactionVisible(entry, filter) {
@@ -874,7 +901,7 @@ function getWalletTransactionEmptyText(filter, date) {
   }
 
   if (filter === "editable") {
-    return "這個日期沒有可編輯的收入、轉帳或調整";
+    return "這個日期沒有可編輯的收入、轉帳、儲值或調整";
   }
 
   return "這個日期沒有錢包流水";
@@ -890,6 +917,10 @@ function getTransactionTitle(entry, wallets) {
 
   if (entry.type === "transfer") {
     return `${walletName} 轉到 ${toWalletName}`;
+  }
+
+  if (entry.type === "topup") {
+    return `${walletName} 儲值到 ${toWalletName}`;
   }
 
   if (entry.type === "adjustment") {
@@ -1060,6 +1091,10 @@ export function applyTheme(mode) {
   dom.themeBadge.textContent = modeConfig.label;
   dom.themeTitle.textContent = modeConfig.title;
   dom.themeDescription.textContent = modeConfig.description;
+  dom.modeIllustration.onerror = () => {
+    console.error(`主題圖片載入失敗：${modeConfig.image}`);
+  };
+  dom.modeIllustration.dataset.modeImage = activeMode;
   dom.modeIllustration.src = modeConfig.image;
   dom.modeIllustration.alt = modeConfig.alt;
 }
@@ -1074,4 +1109,26 @@ function getWalletName(wallets, walletId) {
   }
 
   return wallets.find((wallet) => wallet.id === walletId)?.name || "已封存錢包";
+}
+
+function renderWalletSelect(select, wallets) {
+  const currentValue = select.value;
+
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = wallets.length ? "請選擇錢包" : "請先新增錢包";
+  select.append(placeholder);
+
+  wallets.forEach((wallet) => {
+    const option = document.createElement("option");
+    option.value = wallet.id;
+    option.textContent = `${wallet.name} (${formatCurrency(wallet.balance)})`;
+    select.append(option);
+  });
+
+  if (wallets.some((wallet) => wallet.id === currentValue)) {
+    select.value = currentValue;
+  }
 }

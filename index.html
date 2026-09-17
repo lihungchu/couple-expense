@@ -27,7 +27,7 @@
         <h2 id="themeTitle">柔柔地一起記帳</h2>
         <p id="themeDescription" class="muted">淺紫和淺黃色的療癒帳本，把共同花費整理得輕鬆一點。</p>
       </div>
-      <img id="modeIllustration" class="mode-illustration" src="assets/illustrations/capybara-mode.png?v=3" alt="可愛卡皮巴拉插圖" />
+      <img id="modeIllustration" class="mode-illustration" src="assets/illustrations/capybara-mode.png?v=4" alt="可愛卡皮巴拉插圖" data-mode-image="capybara" />
     </section>
 
     <section class="panel auth-panel">
@@ -135,6 +135,7 @@
             <select id="walletTransactionType" required>
               <option value="income">收入</option>
               <option value="transfer">轉帳</option>
+              <option value="topup">儲值</option>
               <option value="adjustment">調整餘額</option>
             </select>
           </label>
@@ -191,6 +192,7 @@
                   <option value="editable">可編輯流水</option>
                   <option value="income">收入</option>
                   <option value="transfer">轉帳</option>
+                  <option value="topup">儲值</option>
                   <option value="expense">支出</option>
                   <option value="adjustment">調整</option>
                 </select>
@@ -401,6 +403,7 @@
         <select id="editWalletTransactionType" required>
           <option value="income">收入</option>
           <option value="transfer">轉帳</option>
+          <option value="topup">儲值</option>
           <option value="adjustment">調整餘額</option>
         </select>
       </label>

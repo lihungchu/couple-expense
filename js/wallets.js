@@ -129,7 +129,7 @@ export function createWalletTransaction(entry) {
       });
     }
 
-    if (entry.type === "transfer") {
+    if (entry.type === "transfer" || entry.type === "topup") {
       const toWalletRef = doc(db, "wallets", entry.toWalletId);
 
       transaction.update(walletRef, {
@@ -175,6 +175,7 @@ export function createWalletTransaction(entry) {
       date: entry.date,
       note: entry.note || "",
       expenseId: "",
+      affectsBudget: entry.type === "topup",
       createdAt
     });
   });
@@ -243,10 +244,11 @@ function normalizeManualWalletEntry(entry) {
   return {
     type: entry.type,
     walletId: entry.walletId,
-    toWalletId: entry.type === "transfer" ? entry.toWalletId : "",
+    toWalletId: ["transfer", "topup"].includes(entry.type) ? entry.toWalletId : "",
     amount,
     date: entry.date,
-    note: entry.note || ""
+    note: entry.note || "",
+    affectsBudget: entry.type === "topup"
   };
 }
 
@@ -269,7 +271,7 @@ function normalizeAdjustmentEntry(entry) {
 function validateManualWalletTransaction(entry) {
   const amount = Number(entry.amount || 0);
 
-  if (!entry || !["income", "transfer"].includes(entry.type) || entry.expenseId || entry.budgetId) {
+  if (!entry || !["income", "transfer", "topup"].includes(entry.type) || entry.expenseId || entry.budgetId) {
     throw new Error("這筆流水不能在錢包流水中編輯或刪除");
   }
 
@@ -281,11 +283,11 @@ function validateManualWalletTransaction(entry) {
     throw new Error("請輸入正確金額");
   }
 
-  if (entry.type === "transfer" && !entry.toWalletId) {
+  if (["transfer", "topup"].includes(entry.type) && !entry.toWalletId) {
     throw new Error("轉帳缺少目標錢包");
   }
 
-  if (entry.type === "transfer" && entry.walletId === entry.toWalletId) {
+  if (["transfer", "topup"].includes(entry.type) && entry.walletId === entry.toWalletId) {
     throw new Error("來源錢包和目標錢包不能相同");
   }
 }

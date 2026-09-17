@@ -1,4 +1,4 @@
-const CACHE_NAME = "couple-expense-v20";
+const CACHE_NAME = "couple-expense-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,8 +16,8 @@ const APP_SHELL = [
   "./assets/icons/icon-180.png",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
-  "./assets/illustrations/capybara-mode.png?v=3",
-  "./assets/illustrations/dragon-mode.png?v=3"
+  "./assets/illustrations/capybara-mode.png?v=4",
+  "./assets/illustrations/dragon-mode.png?v=4"
 ];
 
 self.addEventListener("install", (event) => {
