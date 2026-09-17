@@ -162,7 +162,10 @@ h3 {
 }
 
 .is-signed-in .hero-panel {
-  display: none;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
 }
 
 .is-signed-in .auth-panel {
@@ -192,6 +195,15 @@ h3 {
   margin: 10px 0 8px;
 }
 
+.is-signed-in .hero-copy h2 {
+  font-size: 1.08rem;
+  margin: 8px 0 0;
+}
+
+.is-signed-in .hero-copy .muted {
+  display: none;
+}
+
 .mode-illustration {
   aspect-ratio: 1;
   border: 1px solid var(--line);
@@ -199,6 +211,11 @@ h3 {
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
   object-fit: cover;
   width: 100%;
+}
+
+.is-signed-in .mode-illustration {
+  justify-self: end;
+  max-width: 96px;
 }
 
 .entry-panel,
@@ -955,6 +972,10 @@ select:focus {
     grid-template-columns: minmax(0, 1fr) 132px;
   }
 
+  .is-signed-in .hero-panel {
+    grid-template-columns: minmax(0, 1fr) 88px;
+  }
+
   .auth-actions {
     min-width: 0;
   }
@@ -997,9 +1018,19 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .is-signed-in .hero-panel {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    align-items: center;
+  }
+
   .mode-illustration {
     justify-self: center;
     max-width: 220px;
+  }
+
+  .is-signed-in .mode-illustration {
+    justify-self: end;
+    max-width: 76px;
   }
 
   .expense-form,
